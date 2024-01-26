@@ -54,16 +54,17 @@ aten = torch.ops.aten
 torch._dynamo.config.fake_tensor_cache_enabled = True
 torch._dynamo.config.fake_tensor_cache_crosscheck_enabled = True
 
+
 def expectedFailurePropagateRealTensors(fn):
     fn._expected_failure_propagate_real_tensors = True
     return fn
+
 
 class FakeTensorTest(TestCase):
     def checkType(self, t, device_str, size):
         self.assertTrue(isinstance(t, FakeTensor))
         self.assertEqual(t.device.type, device_str)
         self.assertEqual(list(t.size()), size)
-
 
     @unittest.skipIf(not RUN_CUDA, "requires cuda")
     def test_cuda_initialized(self):
@@ -317,8 +318,6 @@ class FakeTensorTest(TestCase):
                 torch.ops.aten.index_put(x, torch.tensor([1, 1], device="cuda"), torch.tensor(5.))
                 torch.ops.aten.index_put_(x, torch.tensor([1, 1], device="cuda"), torch.tensor(5.))
 
-
-
     @unittest.skipIf(not RUN_CUDA, "requires cuda")
     def test_like_constructor(self):
         with FakeTensorMode():
@@ -408,7 +407,6 @@ class FakeTensorTest(TestCase):
 
             with self.assertRaisesRegex(Exception, "found.+two.+devices"):
                 x.add_(y)
-
 
     @unittest.skipIf(TEST_WITH_TORCHDYNAMO, "isinstance check for FakeTensor won't work with compile")
     @unittest.skipIf(not RUN_CUDA, "requires cuda")
@@ -792,6 +790,13 @@ class FakeTensorTest(TestCase):
             grad_in = torch.ops.aten._adaptive_avg_pool2d_backward(grad_out, inp)
             self.assertTrue(torch._prims_common.suggest_memory_format(grad_in) == torch.channels_last)
 
+    def test__adaptive_avg_pool3d_backward(self):
+        with FakeTensorMode():
+            grad_out = torch.rand(2, 3, 4, 4, 4)
+            inp = torch.rand(2, 3, 4, 4, 4).to(memory_format=torch.channels_last_3d)
+            grad_in = torch.ops.aten._adaptive_avg_pool3d_backward(grad_out, inp)
+            self.assertTrue(torch._prims_common.suggest_memory_format(grad_in) == torch.channels_last_3d)
+
     # Propagate real tensors doesn't work when original input arguments are
     # fake
     @expectedFailurePropagateRealTensors
@@ -967,7 +972,8 @@ class FakeTensorConverterTest(TestCase):
         x = torch.rand(2, 2).to(device="meta")
         mode = FakeTensorMode()
         converter = mode.fake_tensor_converter
-        self.assertTrue(converter.from_meta_and_device(mode, x, "cpu") is converter.from_meta_and_device(mode, x, "cpu"))
+        self.assertTrue(converter.from_meta_and_device(mode, x, "cpu")
+                        is converter.from_meta_and_device(mode, x, "cpu"))
 
     def test_separate_tensor_storages_view(self):
         x = torch.rand(2, 2, 2)
@@ -997,7 +1003,6 @@ class FakeTensorConverterTest(TestCase):
         del y_conv
         self.assertEqual(len(converter.tensor_memo), 0)
         self.assertEqual(len(converter.meta_converter.storage_memo), 0)
-
 
     @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/1991")
     def test_dead_weak_ref(self):
@@ -1225,7 +1230,8 @@ class FakeTensorOperatorInvariants(TestCase):
                 # We expect the cross ref to succed for the first output to fail
                 # for the rng state, see Note [Seed and Offset]
                 self.assertTrue("output[0]" not in str(e))
-                self.assertTrue("found mismatched tensor metadata for output[6]: Devices cpu and cuda:0 are not equal!" in str(e))
+                self.assertTrue(
+                    "found mismatched tensor metadata for output[6]: Devices cpu and cuda:0 are not equal!" in str(e))
 
     # IMPORTANT!!! Always run even if CUDA is not available
     def test_fake_cuda_no_init(self):
@@ -1351,7 +1357,6 @@ class FakeTensorPropTest(TestCase):
                     failed = True
                 self.assertTrue(failed)
 
-
     @expectedFailurePropagateRealTensors  # Propagate real tensors doesn't work with fake-on-fake
     def test_fake_tensor_prop_on_nn_module_with_optional_args(self):
         class OptionalArgumentInBetween(torch.nn.Module):
@@ -1379,7 +1384,6 @@ class FakeTensorPropTest(TestCase):
             graph_model = torch.fx.symbolic_trace(model, (value, None, another_optional_value))
             FakeTensorProp(graph_model, fake_mode).propagate(value, None, another_optional_value)
 
-
     @expectedFailurePropagateRealTensors  # TODO: not sure about this one, kinda strange
     def test_unbacked_shape_realloc(self):
         def f(x):
@@ -1406,7 +1410,6 @@ class FakeTensorPropTest(TestCase):
         # before feeding it into nonzero, or have some sort of randomness)
         self.assertIsNot(u0, u1)
         self.assertTrue(statically_known_true(u0 == u1))
-
 
     def test_torch_load_with_fake_mode(self):
 
@@ -1512,11 +1515,18 @@ class FakeTensorDispatchCache(TestCase):
             z = x.to(device="cuda")
             self._test_cache_key(fm, x, y, z)
 
-    def test_cache_key_memory_format(self):
+    def test_cache_key_memory_format_2d(self):
         with FakeTensorMode() as fm:
             x = torch.randn(1, 2, 3, 4)
             y = torch.randn(1, 2, 3, 4)
             z = x.to(memory_format=torch.channels_last)
+            self._test_cache_key(fm, x, y, z)
+
+    def test_cache_key_memory_format_3d(self):
+        with FakeTensorMode() as fm:
+            x = torch.randn(1, 2, 3, 4, 5)
+            y = torch.randn(1, 2, 3, 4, 5)
+            z = x.to(memory_format=torch.channels_last_3d)
             self._test_cache_key(fm, x, y, z)
 
     def test_cache_key_storage_offset(self):
@@ -1769,6 +1779,7 @@ class FakeTensorDispatchCache(TestCase):
                 extract_tensor_metadata(res2),
                 extract_tensor_metadata(res4),
             )
+
 
 if __name__ == "__main__":
     run_tests()
