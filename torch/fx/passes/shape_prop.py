@@ -10,7 +10,7 @@ from typing import Any, Tuple, NamedTuple, Optional, Dict
 from torch.fx._compatibility import compatibility
 from torch._guards import detect_fake_mode
 
-__all__ = ['TensorMetadata', 'ShapeProp']
+__all__ = ['TensorMetadata', 'SparseTensorMetadata', 'ShapeProp']
 
 @compatibility(is_backward_compatible=True)
 class TensorMetadata(NamedTuple):
@@ -68,6 +68,61 @@ def _extract_tensor_metadata(result : torch.Tensor, include_contiguity=True) -> 
 
     return TensorMetadata(
         shape, dtype, requires_grad, stride, memory_format, is_quantized, qparams)
+
+
+@compatibility(is_backward_compatible=True)
+class SparseTensorMetadata(NamedTuple):
+    """
+    Metadata relevant to a sparse tensor with given element dtype and shape.
+
+    layout in [ torch.sparse_coo/csr/csc/bsr/bsc ]
+    batch_dim + sparse_dim + dense_dim = ndim = len(shape)
+    idx_dtype denote the types used for compressed indices and positions
+    """
+    dtype: torch.dtype
+    shape: torch.Size
+    layout: torch.layout
+    batch_dim: int
+    sparse_dim: int
+    dense_dim: int
+    blocksize: Optional[Tuple[int,int]]
+    idx_dtype: torch.dtype
+
+def _extract_sparse_tensor_metadata(t: torch.Tensor) -> SparseTensorMetadata:
+    """
+    Extract the SparseTensorMetadata of a tensor.
+    """
+    batch_dim = t.ndim - t.dense_dim() - t.sparse_dim()
+
+    if t.layout is torch.sparse_coo:
+        assert batch_dim == 0  # no batch dim
+        idx_dtype = t.indices().dtype
+    elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
+        assert t.sparse_dim() == 2
+        assert t.col_indices().dtype == t.crow_indices().dtype
+        idx_dtype = t.col_indices().dtype
+    elif t.layout is torch.sparse_csc or t.layout is torch.sparse_bsc:
+        assert t.sparse_dim() == 2
+        assert t.row_indices().dtype == t.ccol_indices().dtype
+        idx_dtype = t.row_indices().dtype
+    else:
+        raise RuntimeError(f"Unsupported sparse layout for {t}")
+
+    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
+       blocksize = t.values().shape[batch_dim + 1:batch_dim + 3]
+    else:
+       blocksize = None
+
+    return SparseTensorMetadata(
+        dtype=t.dtype,
+        shape=t.shape,
+        layout=t.layout,
+        batch_dim=batch_dim,
+        sparse_dim=t.sparse_dim(),
+        dense_dim=t.dense_dim(),
+        blocksize=blocksize,
+        idx_dtype=idx_dtype)
+
 
 @compatibility(is_backward_compatible=True)
 class ShapeProp(torch.fx.Interpreter):
