@@ -750,6 +750,10 @@ def clone_input(x, *, dtype=None):
             # Access data_ptr() for a xla tensor will cause crash
             return torch_clone(x)
 
+        if x.layout is not torch.strided:
+            # Anything without a stride is directly cloned.
+            return torch_clone(x)
+
         needed_size = sum(
             (shape - 1) * stride for shape, stride in zip(x.size(), x.stride())
         )
