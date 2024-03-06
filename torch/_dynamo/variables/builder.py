@@ -1060,11 +1060,6 @@ class VariableBuilder:
         ):
             unimplemented("torch.compile does not support strided NestedTensor")
 
-        if is_sparse_any(value):
-            unimplemented(
-                f"torch.compile does not support sparse Tensor with {value.layout} layout"
-            )
-
         tensor_variable = wrap_fx_proxy(
             tx=self.tx,
             proxy=tensor_proxy,
@@ -1862,10 +1857,14 @@ def wrap_to_fake_tensor_and_record(
                 )
 
         tx.output.tracing_context.tensor_to_context[e] = symbolic_context
-        tx.output.tensor_weakref_to_sizes_strides[e] = {
-            "size": fake_e.size(),
-            "stride": fake_e.stride(),
-        }
+
+        if is_sparse_any(fake_e):
+            # ANYTHING TO DO HERE?
+        else:
+            tx.output.tensor_weakref_to_sizes_strides[e] = {
+                "size": fake_e.size(),
+                "stride": fake_e.stride(),
+            }
 
         if (
             is_tensor

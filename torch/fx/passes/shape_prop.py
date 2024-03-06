@@ -8,10 +8,10 @@ from torch._dispatch.python import enable_python_dispatcher
 from torch.fx.node import Node, map_aggregate
 from typing import Any, Tuple, NamedTuple, Optional, Dict
 from torch.fx._compatibility import compatibility
+from torch._subclasses.meta_utils import is_sparse_any
 from torch._guards import detect_fake_mode
 
 __all__ = ["TensorMetadata", "ShapeProp"]
-
 
 @compatibility(is_backward_compatible=True)
 class TensorMetadata(NamedTuple):
@@ -19,53 +19,55 @@ class TensorMetadata(NamedTuple):
     # about a tensor within a PyTorch program.
 
     # General Tensor metadata
-    shape: torch.Size
-    dtype: torch.dtype
-    requires_grad: bool
-    stride: Tuple[int, ...]
-    memory_format: Optional[torch.memory_format]
+    shape : torch.Size
+    dtype : torch.dtype
+    requires_grad : bool
+    stride : Tuple[int, ...]
+    memory_format : Optional[torch.memory_format]
 
     # Quantization metadata
-    is_quantized: bool
+    is_quantized : bool
     qparams: Dict[str, Any]
 
     # Sparse metadata when layout in [ torch.sparse_coo/csr/csc/bsr/bsc ]
     #   batch_dim + sparse_dim + dense_dim = ndim = len(shape)
     #   blocksize for bsr/bsc
     #   idx_dtype denote the types used for compressed indices and positions
-    batch_dim: int
-    sparse_dim: int
-    dense_dim: int
-    blocksize: Optional[Tuple[int, int]]
-    idx_dtype: Optional[torch.dtype]
+    layout : torch.layout
+    batch_dim : int
+    sparse_dim : int
+    dense_dim : int
+    blocksize : Optional[Tuple[int, int]]
+    idx_dtype : Optional[torch.dtype]
 
 
 def _extract_sparse_tensor_metadata(
     t: torch.Tensor,
 ) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
+    layout = t.layout
     sparse_dim = t.sparse_dim()
     dense_dim = t.dense_dim()
     batch_dim = t.ndim - dense_dim - sparse_dim
-    if t.layout is torch.sparse_coo:
+    if layout is torch.sparse_coo:
         assert batch_dim == 0  # no batch dim
         idx_dtype = t.indices().dtype
-    elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
+    elif layout is torch.sparse_csr or layout is torch.sparse_bsr:
         assert sparse_dim == 2
         assert t.col_indices().dtype == t.crow_indices().dtype
         idx_dtype = t.col_indices().dtype
-    elif t.layout is torch.sparse_csc or t.layout is torch.sparse_bsc:
+    elif layout is torch.sparse_csc or layout is torch.sparse_bsc:
         assert sparse_dim == 2
         assert t.row_indices().dtype == t.ccol_indices().dtype
         idx_dtype = t.row_indices().dtype
     else:
-        raise RuntimeError(f"Unsupported sparse layout for {t}")
+        raise RuntimeError(f"Unsupported sparse layout {layout}")
 
-    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
+    if layout is torch.sparse_bsr or layout is torch.sparse_bsc:
         blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
     else:
         blocksize = None
 
-    return (batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype)
+    return (layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype)
 
 
 def _extract_tensor_metadata(
@@ -100,11 +102,7 @@ def _extract_tensor_metadata(
         if qscheme in {torch.per_tensor_affine, torch.per_tensor_symmetric}:
             qparams["scale"] = result.q_scale()  # type: ignore[assignment]
             qparams["zero_point"] = result.q_zero_point()  # type: ignore[assignment]
-        elif qscheme in {
-            torch.per_channel_affine,
-            torch.per_channel_affine_float_qparams,
-            torch.per_channel_symmetric,
-        }:
+        elif qscheme in {torch.per_channel_affine, torch.per_channel_affine_float_qparams, torch.per_channel_symmetric}:
             # In this branch, scale and zero_point are expected to be tensors,
             # we store the values as immutable_list in TensorMetadata for
             # easier serialization downstream
@@ -112,32 +110,15 @@ def _extract_tensor_metadata(
             qparams["zero_point"] = result.q_per_channel_zero_points().tolist()  # type: ignore[assignment]
             qparams["axis"] = result.q_per_channel_axis()  # type: ignore[assignment]
 
-    batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
-        (0, 0, result.ndim, None, None)
-        if result.layout
-        not in {
-            torch.sparse_coo,
-            torch.sparse_csr,
-            torch.sparse_csc,
-            torch.sparse_bsr,
-            torch.sparse_bsc,
-        }
-        else _extract_sparse_tensor_metadata(result)
+    layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
+        _extract_sparse_tensor_metadata(result) if is_sparse_any(result)
+        else (None, 0, 0, result.ndim, None, None)
     )
 
     return TensorMetadata(
-        shape,
-        dtype,
-        requires_grad,
-        stride,
-        memory_format,
-        is_quantized,
-        qparams,
-        batch_dim,
-        sparse_dim,
-        dense_dim,
-        blocksize,
-        idx_dtype,
+        shape, dtype, requires_grad, stride, memory_format,
+        is_quantized, qparams,  # quantized
+        layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype  # sparse
     )
 
 
@@ -188,14 +169,12 @@ class ShapeProp(torch.fx.Interpreter):
          fake_mode (FakeTensorMode): A fake mode for copying the gm
 
     """
-
     def __init__(self, gm, fake_mode=None):
         super().__init__(gm)
         if fake_mode is None:
             fake_mode = detect_fake_mode()
         if fake_mode is not None:
             from torch._dynamo.utils import deepcopy_to_fake_tensor
-
             # Note:
             # We need fake execution cause the inputs are fake, however, we cannot fakify the module
             # - because we need to write to the tensor_meta of the real module. So we fakify to
@@ -213,7 +192,7 @@ class ShapeProp(torch.fx.Interpreter):
 
         self.real_module = self.module
 
-    def run_node(self, n: Node) -> Any:
+    def run_node(self, n : Node) -> Any:
         try:
             if self.fake_module is not None:
                 # Hacky swap. Alternatively, we could do this with overriding
@@ -230,7 +209,8 @@ class ShapeProp(torch.fx.Interpreter):
         except Exception as e:
             traceback.print_exc()
             raise RuntimeError(
-                f"ShapeProp error for: node={n.format_node()} with " f"meta={n.meta}"
+                f"ShapeProp error for: node={n.format_node()} with "
+                f"meta={n.meta}"
             ) from e
 
         found_tensor = False
@@ -245,9 +225,9 @@ class ShapeProp(torch.fx.Interpreter):
 
         meta = map_aggregate(result, extract_tensor_meta)
         if found_tensor:
-            n.meta["tensor_meta"] = meta
+            n.meta['tensor_meta'] = meta
 
-        n.meta["type"] = type(result)
+        n.meta['type'] = type(result)
         return result
 
     def propagate(self, *args):
@@ -262,10 +242,7 @@ class ShapeProp(torch.fx.Interpreter):
             Any: The value returned from executing the Module
         """
         if self.fake_mode is not None:
-            fake_args = [
-                self.fake_mode.from_tensor(t) if isinstance(t, torch.Tensor) else t
-                for t in args
-            ]
+            fake_args = [self.fake_mode.from_tensor(t) if isinstance(t, torch.Tensor) else t for t in args]
         else:
             fake_args = args
         return super().run(*fake_args)

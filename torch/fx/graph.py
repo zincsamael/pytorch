@@ -534,7 +534,8 @@ class CodeGen:
                 from torch.fx.experimental.proxy_tensor import py_sym_types
                 from torch.fx.passes.shape_prop import TensorMetadata
 
-                meta_val = node.meta.get('val', node.meta.get('tensor_meta', None))
+                tensor_meta = node.meta.get('tensor_meta', None)
+                meta_val = node.meta.get('val', tensor_meta)
 
                 # use string as annotation, to make it valid python code
                 if isinstance(meta_val, FakeTensor):
@@ -543,6 +544,11 @@ class CodeGen:
                     maybe_type_annotation = f': "Sym({meta_val})"'
                 elif isinstance(meta_val, TensorMetadata):
                     maybe_type_annotation = f': "{dtype_abbrs[meta_val.dtype]}{stringify_shape(meta_val.shape)}"'
+
+                # Add a layout type annotation for sparse tensors
+                # (purely to distinguish them from dense tensors).
+                if tensor_meta is not None and tensor_meta.layout is not None:
+                   maybe_type_annotation = f'{maybe_type_annotation}:{tensor_meta.layout}'
 
             if node.op == 'placeholder':
                 assert isinstance(node.target, str)
