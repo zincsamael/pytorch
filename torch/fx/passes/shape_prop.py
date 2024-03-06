@@ -19,6 +19,7 @@ class TensorMetadata(NamedTuple):
     # about a tensor within a PyTorch program.
 
     # General Tensor metadata
+    layout : torch.layout
     shape : torch.Size
     dtype : torch.dtype
     requires_grad : bool
@@ -33,7 +34,6 @@ class TensorMetadata(NamedTuple):
     #   batch_dim + sparse_dim + dense_dim = ndim = len(shape)
     #   blocksize for bsr/bsc
     #   idx_dtype denote the types used for compressed indices and positions
-    layout : torch.layout
     batch_dim : int
     sparse_dim : int
     dense_dim : int
@@ -44,30 +44,29 @@ class TensorMetadata(NamedTuple):
 def _extract_sparse_tensor_metadata(
     t: torch.Tensor,
 ) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
-    layout = t.layout
     sparse_dim = t.sparse_dim()
     dense_dim = t.dense_dim()
     batch_dim = t.ndim - dense_dim - sparse_dim
-    if layout is torch.sparse_coo:
+    if t.layout is torch.sparse_coo:
         assert batch_dim == 0  # no batch dim
         idx_dtype = t.indices().dtype
-    elif layout is torch.sparse_csr or layout is torch.sparse_bsr:
+    elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
         assert sparse_dim == 2
         assert t.col_indices().dtype == t.crow_indices().dtype
         idx_dtype = t.col_indices().dtype
-    elif layout is torch.sparse_csc or layout is torch.sparse_bsc:
+    elif t.layout is torch.sparse_csc or t.layout is torch.sparse_bsc:
         assert sparse_dim == 2
         assert t.row_indices().dtype == t.ccol_indices().dtype
         idx_dtype = t.row_indices().dtype
     else:
-        raise RuntimeError(f"Unsupported sparse layout {layout}")
+        raise RuntimeError(f"Unsupported sparse layout {t.layout}")
 
-    if layout is torch.sparse_bsr or layout is torch.sparse_bsc:
+    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
         blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
     else:
         blocksize = None
 
-    return (layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype)
+    return (batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype)
 
 
 def _extract_tensor_metadata(
@@ -76,6 +75,7 @@ def _extract_tensor_metadata(
     """
     Extract a TensorMetadata NamedTuple describing `result`.
     """
+    layout = result.layout
     shape = result.shape
     dtype = result.dtype
     requires_grad = result.requires_grad
@@ -110,15 +110,15 @@ def _extract_tensor_metadata(
             qparams["zero_point"] = result.q_per_channel_zero_points().tolist()  # type: ignore[assignment]
             qparams["axis"] = result.q_per_channel_axis()  # type: ignore[assignment]
 
-    layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
+    batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
         _extract_sparse_tensor_metadata(result) if is_sparse_any(result)
-        else (None, 0, 0, result.ndim, None, None)
+        else (0, 0, result.ndim, None, None)
     )
 
     return TensorMetadata(
-        shape, dtype, requires_grad, stride, memory_format,
+        layout, shape, dtype, requires_grad, stride, memory_format,
         is_quantized, qparams,  # quantized
-        layout, batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype  # sparse
+        batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype  # sparse
     )
 
 

@@ -1859,7 +1859,7 @@ def wrap_to_fake_tensor_and_record(
         tx.output.tracing_context.tensor_to_context[e] = symbolic_context
 
         if is_sparse_any(fake_e):
-            # ANYTHING TO DO HERE?
+            pass # ANYTHING TO DO HERE?
         else:
             tx.output.tensor_weakref_to_sizes_strides[e] = {
                 "size": fake_e.size(),
