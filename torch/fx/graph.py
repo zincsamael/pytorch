@@ -547,7 +547,7 @@ class CodeGen:
 
                 # Add a layout type annotation for sparse tensors
                 # (purely to distinguish them from dense tensors).
-                if tensor_meta is not None and tensor_meta.layout is not None:
+                if tensor_meta is not None and tensor_meta.sparse_dim != 0:
                    maybe_type_annotation = f'{maybe_type_annotation}:{tensor_meta.layout}'
 
             if node.op == 'placeholder':
