@@ -34,9 +34,9 @@ class TensorMetadata(NamedTuple):
     #   batch_dim + sparse_dim + dense_dim = ndim = len(shape)
     #   blocksize for bsr/bsc
     #   idx_dtype denote the types used for compressed indices and positions
-    batch_dim : int
-    sparse_dim : int
-    dense_dim : int
+    batch_dim : Optional[int]
+    sparse_dim : Optional[int]
+    dense_dim : Optional[int]
     blocksize : Optional[Tuple[int, int]]
     idx_dtype : Optional[torch.dtype]
 
@@ -44,29 +44,20 @@ class TensorMetadata(NamedTuple):
 def _extract_sparse_tensor_metadata(
     t: torch.Tensor,
 ) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
-    sparse_dim = t.sparse_dim()
-    dense_dim = t.dense_dim()
-    batch_dim = t.ndim - dense_dim - sparse_dim
+    # Set index type.
     if t.layout is torch.sparse_coo:
-        assert batch_dim == 0  # no batch dim
         idx_dtype = t.indices().dtype
     elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
-        assert sparse_dim == 2
-        assert t.col_indices().dtype == t.crow_indices().dtype
         idx_dtype = t.col_indices().dtype
-    elif t.layout is torch.sparse_csc or t.layout is torch.sparse_bsc:
-        assert sparse_dim == 2
-        assert t.row_indices().dtype == t.ccol_indices().dtype
-        idx_dtype = t.row_indices().dtype
     else:
-        raise RuntimeError(f"Unsupported sparse layout {t.layout}")
-
+        idx_dtype = t.row_indices().dtype
+    # Set block size.
     if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
         blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
     else:
         blocksize = None
-
-    return (batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype)
+    # Return sparse metadata.
+    return (t.ndim - t.dense_dim() - t.sparse_dim(), t.sparse_dim(), t.dense_dim(), blocksize, idx_dtype)
 
 
 def _extract_tensor_metadata(
@@ -112,7 +103,7 @@ def _extract_tensor_metadata(
 
     batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
         _extract_sparse_tensor_metadata(result) if is_sparse_any(result)
-        else (0, 0, result.ndim, None, None)
+        else (None, None, None, None, None)
     )
 
     return TensorMetadata(
