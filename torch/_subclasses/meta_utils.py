@@ -568,7 +568,7 @@ class MetaConverter:
                             dtype=t.dtype,
                             device="meta",
                         )
-                        # Don't we need t.sparse_dim()/t.dense_dim() here?
+                        # Don't we need t.dense_dim() here?
                         return torch.ops.aten.sparse_compressed_tensor(
                             compressed_indices,
                             plain_indices,
