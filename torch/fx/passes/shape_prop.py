@@ -11,7 +11,7 @@ from torch.fx._compatibility import compatibility
 from torch._subclasses.meta_utils import is_sparse_any
 from torch._guards import detect_fake_mode
 
-__all__ = ["TensorMetadata", "ShapeProp"]
+__all__ = ['TensorMetadata', 'ShapeProp']
 
 @compatibility(is_backward_compatible=True)
 class TensorMetadata(NamedTuple):
