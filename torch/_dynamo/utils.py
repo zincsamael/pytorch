@@ -752,6 +752,7 @@ def clone_input(x, *, dtype=None):
 
         if x.layout is not torch.strided:
             # Anything without a stride is directly cloned.
+            # TODO: is more needed for sparse?
             return torch_clone(x)
 
         needed_size = sum(

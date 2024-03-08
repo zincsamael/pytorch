@@ -878,10 +878,7 @@ def merge_view_inputs(
     other_args = []
     for i, inpt in enumerate(fwd_inputs):
         if isinstance(inpt, Tensor):
-            if is_sparse_any(inpt):
-                storage_ref = None
-            else:
-                storage_ref = StorageWeakRef(inpt.untyped_storage())
+            storage_ref = StorageWeakRef(inpt.untyped_storage()) if not is_sparse_any(inpt) else None
             storage_ref_to_idx[storage_ref].append(i)
         else:
             other_args.append(inpt)
