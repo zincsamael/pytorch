@@ -63,7 +63,11 @@ class TestSparseProp(TestCase):
                 meta = node.meta.get("tensor_meta", None)
                 if i == 0:
                     self.assertEqual(meta.layout, sparse_layout)
+                    self.assertEqual(meta.batch_dim, 0)
                     self.assertEqual(meta.sparse_dim, 2)
+                    self.assertEqual(meta.dense_dim, 0)
+                    self.assertEqual(meta.blocksize, None)
+                    self.assertEqual(meta.dtype, torch.float32)
                 elif i == 1:
                     self.assertEqual(meta.layout, torch.strided)
                     self.assertEqual(meta.sparse_dim, None)
@@ -80,7 +84,11 @@ class TestSparseProp(TestCase):
                 meta = node.meta.get("tensor_meta", None)
                 if i <= 3:
                     self.assertEqual(meta.layout, sparse_layout)
+                    self.assertEqual(meta.batch_dim, 0)
                     self.assertEqual(meta.sparse_dim, 2)
+                    self.assertEqual(meta.dense_dim, 0)
+                    self.assertEqual(meta.blocksize, None)
+                    self.assertEqual(meta.dtype, torch.float32)
                 else:
                     self.assertEqual(meta, None)
 
