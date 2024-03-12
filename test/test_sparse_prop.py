@@ -53,8 +53,6 @@ class TestSparseProp(TestCase):
     def setUp(self):
         TestCase.setUp(self)
 
-    # TODO: test csr versions, and other of these
-
     def test_sumnet(self):
         net = SumNet()
         for sparse_layout in SPARSE_LAYOUTS:
@@ -81,7 +79,7 @@ class TestSparseProp(TestCase):
         for sparse_layout in SPARSE_LAYOUTS:
             sparse_input, blocksize = make_sparse(sparse_layout)
             prog = torch.export.export(net, (sparse_input,))
-            # Test arg/neg/sin/mul/output
+            # Test arg/neg/sin/mul/output.
             for i, node in enumerate(prog.graph.nodes):
                 meta = node.meta.get("tensor_meta", None)
                 if i <= 3:
@@ -89,7 +87,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(meta.batch_dim, 0)
                     self.assertEqual(meta.sparse_dim, 2)
                     self.assertEqual(meta.dense_dim, 0)
-                    self.assertEqual(meta.blocksize, None)
+                    self.assertEqual(meta.blocksize, blocksize)
                     self.assertEqual(meta.dtype, torch.float32)
                 else:
                     self.assertEqual(meta, None)
