@@ -3,6 +3,7 @@
 import torch
 
 from torch.testing._internal.common_utils import TestCase, run_tests
+from typing import Optional, Tuple
 
 
 class SumNet(torch.nn.Module):
@@ -34,17 +35,18 @@ SPARSE_LAYOUTS = [
 ]
 
 
-def make_sparse(layout: torch.layout, dense: torch.Tensor) -> torch.Tensor:
+def make_sparse(layout: torch.layout) -> Tuple[torch.Tensor, Optional[Tuple[int, int]]]:
+    dense = torch.ones(4, 8)
     if layout == torch.sparse_coo:
-        return dense.to_sparse_coo()
+        return (dense.to_sparse_coo(), None)
     if layout == torch.sparse_csr:
-        return dense.to_sparse_csr()
+        return (dense.to_sparse_csr(), None)
     if layout == torch.sparse_csc:
-        return dense.to_sparse_csc()
+        return (dense.to_sparse_csc(), None)
     if layout == torch.sparse_bsr:
-        return dense.to_sparse_bsr((2, 2))
+        return (dense.to_sparse_bsr((2, 2)), (2, 2))
     if layout == torch.sparse_bsc:
-        return dense.to_sparse_bsc((2, 2))
+        return (dense.to_sparse_bsc((2, 4)), (2, 4))
 
 
 class TestSparseProp(TestCase):
@@ -56,7 +58,7 @@ class TestSparseProp(TestCase):
     def test_sumnet(self):
         net = SumNet()
         for sparse_layout in SPARSE_LAYOUTS:
-            sparse_input = make_sparse(sparse_layout, torch.ones(4, 8))
+            sparse_input, blocksize = make_sparse(sparse_layout)
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/sum/output.
             for i, node in enumerate(prog.graph.nodes):
@@ -66,7 +68,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(meta.batch_dim, 0)
                     self.assertEqual(meta.sparse_dim, 2)
                     self.assertEqual(meta.dense_dim, 0)
-                    self.assertEqual(meta.blocksize, None)
+                    self.assertEqual(meta.blocksize, blocksize)
                     self.assertEqual(meta.dtype, torch.float32)
                 elif i == 1:
                     self.assertEqual(meta.layout, torch.strided)
@@ -77,7 +79,7 @@ class TestSparseProp(TestCase):
     def test_eltwisenet_coo(self):
         net = EltwiseNet()
         for sparse_layout in SPARSE_LAYOUTS:
-            sparse_input = make_sparse(sparse_layout, torch.ones(4, 8))
+            sparse_input, blocksize = make_sparse(sparse_layout)
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/neg/sin/mul/output
             for i, node in enumerate(prog.graph.nodes):
