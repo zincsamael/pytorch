@@ -67,7 +67,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(meta.sparse_dim, 2)
                     self.assertEqual(meta.dense_dim, 0)
                     self.assertEqual(meta.blocksize, blocksize)
-                    self.assertEqual(meta.dtype, torch.float32)
+                    self.assertEqual(meta.idx_dtype, torch.int64)
                 elif i == 1:
                     self.assertEqual(meta.layout, torch.strided)
                     self.assertEqual(meta.sparse_dim, None)
@@ -88,7 +88,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(meta.sparse_dim, 2)
                     self.assertEqual(meta.dense_dim, 0)
                     self.assertEqual(meta.blocksize, blocksize)
-                    self.assertEqual(meta.dtype, torch.float32)
+                    self.assertEqual(meta.idx_dtype, torch.int64)
                 else:
                     self.assertEqual(meta, None)
 
