@@ -74,7 +74,7 @@ class TestSparseProp(TestCase):
                 else:
                     self.assertEqual(meta, None)
 
-    def test_eltwisenet_coo(self):
+    def test_eltwisenet(self):
         net = EltwiseNet()
         for sparse_layout in SPARSE_LAYOUTS:
             sparse_input, blocksize = make_sparse(sparse_layout)
