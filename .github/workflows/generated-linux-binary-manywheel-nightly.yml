@@ -48,7 +48,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu
       build_environment: linux-binary-manywheel
@@ -66,7 +66,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu
       build_environment: linux-binary-manywheel
@@ -87,7 +87,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu
     secrets:
@@ -107,7 +107,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu-cxx11-abi
@@ -126,7 +126,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu-cxx11-abi
@@ -148,7 +148,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cpu-cxx11-abi
@@ -170,7 +170,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda11_8
       build_environment: linux-binary-manywheel
@@ -190,7 +190,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda11_8
       build_environment: linux-binary-manywheel
@@ -212,7 +212,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda11_8
     secrets:
@@ -233,7 +233,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda12_1
       build_environment: linux-binary-manywheel
@@ -253,7 +253,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda12_1
       build_environment: linux-binary-manywheel
@@ -275,7 +275,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda12_1
     secrets:
@@ -302,8 +302,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda12_4
       build_environment: linux-binary-manywheel
@@ -329,7 +333,7 @@ jobs:
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
       DESIRED_PYTHON: "3.8"
     steps:
       - name: Setup ROCm
@@ -370,7 +374,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm5.7-2.3
+          docker-image: pytorch/manylinux-builder:rocm5.7-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -397,8 +401,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-cuda12_4
       build_environment: linux-binary-manywheel
@@ -441,7 +449,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-rocm6_0
       build_environment: linux-binary-manywheel
@@ -462,7 +470,7 @@ jobs:
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.8"
     steps:
       - name: Setup ROCm
@@ -503,7 +511,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm6.0-2.3
+          docker-image: pytorch/manylinux-builder:rocm6.0-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -523,7 +531,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.8"
       build_name: manywheel-py3_8-rocm6_0
     secrets:
@@ -646,7 +654,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu
       build_environment: linux-binary-manywheel
@@ -664,7 +672,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu
       build_environment: linux-binary-manywheel
@@ -685,7 +693,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu
     secrets:
@@ -705,7 +713,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu-cxx11-abi
@@ -724,7 +732,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu-cxx11-abi
@@ -746,7 +754,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cpu-cxx11-abi
@@ -768,7 +776,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda11_8
       build_environment: linux-binary-manywheel
@@ -788,7 +796,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda11_8
       build_environment: linux-binary-manywheel
@@ -810,7 +818,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda11_8
     secrets:
@@ -831,7 +839,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda12_1
       build_environment: linux-binary-manywheel
@@ -851,7 +859,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda12_1
       build_environment: linux-binary-manywheel
@@ -873,7 +881,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda12_1
     secrets:
@@ -900,8 +908,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda12_4
       build_environment: linux-binary-manywheel
@@ -927,7 +939,7 @@ jobs:
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
       DESIRED_PYTHON: "3.9"
     steps:
       - name: Setup ROCm
@@ -968,7 +980,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm5.7-2.3
+          docker-image: pytorch/manylinux-builder:rocm5.7-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -995,8 +1007,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-cuda12_4
       build_environment: linux-binary-manywheel
@@ -1039,7 +1055,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-rocm6_0
       build_environment: linux-binary-manywheel
@@ -1060,7 +1076,7 @@ jobs:
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.9"
     steps:
       - name: Setup ROCm
@@ -1101,7 +1117,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm6.0-2.3
+          docker-image: pytorch/manylinux-builder:rocm6.0-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -1121,7 +1137,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.9"
       build_name: manywheel-py3_9-rocm6_0
     secrets:
@@ -1244,7 +1260,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu
       build_environment: linux-binary-manywheel
@@ -1262,7 +1278,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu
       build_environment: linux-binary-manywheel
@@ -1283,7 +1299,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu
     secrets:
@@ -1303,7 +1319,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu-cxx11-abi
@@ -1322,7 +1338,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu-cxx11-abi
@@ -1344,7 +1360,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cpu-cxx11-abi
@@ -1366,7 +1382,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda11_8
       build_environment: linux-binary-manywheel
@@ -1386,7 +1402,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda11_8
       build_environment: linux-binary-manywheel
@@ -1408,7 +1424,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda11_8
     secrets:
@@ -1429,7 +1445,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda12_1
       build_environment: linux-binary-manywheel
@@ -1449,7 +1465,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda12_1
       build_environment: linux-binary-manywheel
@@ -1471,7 +1487,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda12_1
     secrets:
@@ -1498,8 +1514,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda12_4
       build_environment: linux-binary-manywheel
@@ -1525,7 +1545,7 @@ jobs:
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
       DESIRED_PYTHON: "3.10"
     steps:
       - name: Setup ROCm
@@ -1566,7 +1586,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm5.7-2.3
+          docker-image: pytorch/manylinux-builder:rocm5.7-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -1593,8 +1613,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-cuda12_4
       build_environment: linux-binary-manywheel
@@ -1637,7 +1661,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-rocm6_0
       build_environment: linux-binary-manywheel
@@ -1658,7 +1682,7 @@ jobs:
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.10"
     steps:
       - name: Setup ROCm
@@ -1699,7 +1723,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm6.0-2.3
+          docker-image: pytorch/manylinux-builder:rocm6.0-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -1719,7 +1743,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.10"
       build_name: manywheel-py3_10-rocm6_0
     secrets:
@@ -1842,7 +1866,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu
       build_environment: linux-binary-manywheel
@@ -1860,7 +1884,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu
       build_environment: linux-binary-manywheel
@@ -1881,7 +1905,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu
     secrets:
@@ -1901,7 +1925,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu-cxx11-abi
@@ -1920,7 +1944,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu-cxx11-abi
@@ -1942,7 +1966,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cpu-cxx11-abi
@@ -1964,7 +1988,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda11_8
       build_environment: linux-binary-manywheel
@@ -1984,7 +2008,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda11_8
       build_environment: linux-binary-manywheel
@@ -2006,7 +2030,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda11_8
     secrets:
@@ -2027,7 +2051,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda12_1
       build_environment: linux-binary-manywheel
@@ -2047,7 +2071,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda12_1
       build_environment: linux-binary-manywheel
@@ -2069,7 +2093,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda12_1
     secrets:
@@ -2096,8 +2120,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda12_4
       build_environment: linux-binary-manywheel
@@ -2123,7 +2151,7 @@ jobs:
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
       DESIRED_PYTHON: "3.11"
     steps:
       - name: Setup ROCm
@@ -2164,7 +2192,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm5.7-2.3
+          docker-image: pytorch/manylinux-builder:rocm5.7-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -2191,8 +2219,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-cuda12_4
       build_environment: linux-binary-manywheel
@@ -2235,7 +2267,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-rocm6_0
       build_environment: linux-binary-manywheel
@@ -2256,7 +2288,7 @@ jobs:
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.11"
     steps:
       - name: Setup ROCm
@@ -2297,7 +2329,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm6.0-2.3
+          docker-image: pytorch/manylinux-builder:rocm6.0-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -2317,7 +2349,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.11"
       build_name: manywheel-py3_11-rocm6_0
     secrets:
@@ -2440,7 +2472,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu
       build_environment: linux-binary-manywheel
@@ -2458,7 +2490,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu
       build_environment: linux-binary-manywheel
@@ -2479,7 +2511,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu
       GPU_ARCH_TYPE: cpu
-      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cpu-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu
     secrets:
@@ -2499,7 +2531,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu-cxx11-abi
@@ -2518,7 +2550,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu-cxx11-abi
@@ -2540,7 +2572,7 @@ jobs:
       #       favor of GPU_ARCH_VERSION
       DESIRED_CUDA: cpu-cxx11-abi
       GPU_ARCH_TYPE: cpu-cxx11-abi
-      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-2.3
+      DOCKER_IMAGE: pytorch/manylinuxcxx11-abi-builder:cpu-cxx11-abi-main
       DESIRED_DEVTOOLSET: cxx11-abi
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cpu-cxx11-abi
@@ -2562,7 +2594,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda11_8
       build_environment: linux-binary-manywheel
@@ -2582,7 +2614,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda11_8
       build_environment: linux-binary-manywheel
@@ -2604,7 +2636,7 @@ jobs:
       DESIRED_CUDA: cu118
       GPU_ARCH_VERSION: 11.8
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda11.8-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda11_8
     secrets:
@@ -2625,7 +2657,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda12_1
       build_environment: linux-binary-manywheel
@@ -2645,7 +2677,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda12_1
       build_environment: linux-binary-manywheel
@@ -2667,7 +2699,7 @@ jobs:
       DESIRED_CUDA: cu121
       GPU_ARCH_VERSION: 12.1
       GPU_ARCH_TYPE: cuda
-      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:cuda12.1-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda12_1
     secrets:
@@ -2694,8 +2726,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda12_4
       build_environment: linux-binary-manywheel
@@ -2721,7 +2757,7 @@ jobs:
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
       DESIRED_PYTHON: "3.12"
     steps:
       - name: Setup ROCm
@@ -2762,7 +2798,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm5.7-2.3
+          docker-image: pytorch/manylinux-builder:rocm5.7-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -2789,8 +2825,12 @@ jobs:
       DESIRED_CUDA: rocm5.7
       GPU_ARCH_VERSION: 5.7
       GPU_ARCH_TYPE: rocm
+<<<<<<< HEAD
       DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-2.3
 >>>>>>> 2aec3faa327 (test_onednn)
+=======
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm5.7-main
+>>>>>>> 1abdab47636 (test)
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-cuda12_4
       build_environment: linux-binary-manywheel
@@ -2833,7 +2873,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-rocm6_0
       build_environment: linux-binary-manywheel
@@ -2854,7 +2894,7 @@ jobs:
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
       SKIP_ALL_TESTS: 1
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.12"
     steps:
       - name: Setup ROCm
@@ -2895,7 +2935,7 @@ jobs:
       - name: Pull Docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: pytorch/manylinux-builder:rocm6.0-2.3
+          docker-image: pytorch/manylinux-builder:rocm6.0-main
       - name: Test Pytorch binary
         uses: ./pytorch/.github/actions/test-pytorch-binary
       - name: Teardown ROCm
@@ -2915,7 +2955,7 @@ jobs:
       DESIRED_CUDA: rocm6.0
       GPU_ARCH_VERSION: 6.0
       GPU_ARCH_TYPE: rocm
-      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-2.3
+      DOCKER_IMAGE: pytorch/manylinux-builder:rocm6.0-main
       DESIRED_PYTHON: "3.12"
       build_name: manywheel-py3_12-rocm6_0
     secrets:
