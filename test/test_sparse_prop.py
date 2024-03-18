@@ -14,8 +14,6 @@ from typing import Optional, Tuple
 
 # Common sparse data dtypes currently supported in torch.sparse.
 SPARSE_DTYPES = [
-    torch.int8,
-    torch.int16,
     torch.float16,
     torch.bfloat16,
     torch.float32,
