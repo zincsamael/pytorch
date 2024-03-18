@@ -120,8 +120,6 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            print(layout, dtype, itype)
-            print(sparse_input)
             batch_dim = (
                 sparse_input.ndim - sparse_input.sparse_dim() - sparse_input.dense_dim()
             )
