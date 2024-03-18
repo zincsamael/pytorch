@@ -44,6 +44,12 @@ class TensorMetadata(NamedTuple):
 def _extract_sparse_tensor_metadata(
     t: torch.Tensor,
 ) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
+    batch_dim = t.ndim - t.dense_dim() - t.sparse_dim()
+    # Set block size.
+    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
+        blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
+    else:
+        blocksize = None
     # Set index type.
     if t.layout is torch.sparse_coo:
         idx_dtype = t._indices().dtype  # supports uncoalesced COO tensors
@@ -51,13 +57,8 @@ def _extract_sparse_tensor_metadata(
         idx_dtype = t.col_indices().dtype
     else:
         idx_dtype = t.row_indices().dtype
-    # Set block size.
-    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
-        blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
-    else:
-        blocksize = None
     # Return sparse metadata.
-    return (t.ndim - t.dense_dim() - t.sparse_dim(), t.sparse_dim(), t.dense_dim(), blocksize, idx_dtype)
+    return (batch_dim, t.sparse_dim(), t.dense_dim(), blocksize, idx_dtype)
 
 
 def _extract_tensor_metadata(
