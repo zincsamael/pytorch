@@ -46,7 +46,7 @@ def _extract_sparse_tensor_metadata(
 ) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
     # Set index type.
     if t.layout is torch.sparse_coo:
-        idx_dtype = t.indices().dtype
+        idx_dtype = t._indices().dtype  # supports uncoalesced COO tensors
     elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
         idx_dtype = t.col_indices().dtype
     else:
