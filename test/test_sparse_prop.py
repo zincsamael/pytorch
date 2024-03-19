@@ -7,9 +7,7 @@ from torch.testing._internal.common_utils import (
     instantiate_parametrized_tests,
     parametrize,
     run_tests,
-    subtest,
 )
-from typing import Optional, Tuple
 
 
 # Common sparse data dtypes currently supported in torch.sparse.
@@ -38,8 +36,7 @@ SPARSE_LAYOUTS = [
 
 class SumNet(torch.nn.Module):
     def __init__(self):
-        super(SumNet, self).__init__()
-        return
+        super().__init__()
 
     def forward(self, x):
         return x.sum()
@@ -47,8 +44,7 @@ class SumNet(torch.nn.Module):
 
 class EltwiseNet(torch.nn.Module):
     def __init__(self):
-        super(EltwiseNet, self).__init__()
-        return
+        super().__init__()
 
     def forward(self, x):
         return 2 * torch.sin(-x)
@@ -64,9 +60,9 @@ class TestSparseProp(TestCase):
     def test_sumnet(self, dtype, itype, layout):
         # TODO: support more cases
         if layout != torch.sparse_coo:
-            self.skipTest(f"layout support not yet implemented")
+            self.skipTest("layout support not yet implemented")
         if layout == torch.sparse_coo and itype != torch.int64:
-            self.skipTest(f"COO only supports int64 index type")
+            self.skipTest("COO only supports int64 index type")
 
         net = SumNet()
         for sparse_input in self.generate_simple_inputs(
@@ -107,9 +103,9 @@ class TestSparseProp(TestCase):
     def test_eltwisenet(self, dtype, itype, layout):
         # TODO: support more cases
         if layout != torch.sparse_coo:
-            self.skipTest(f"layout support not yet implemented")
+            self.skipTest("layout support not yet implemented")
         if layout == torch.sparse_coo and itype != torch.int64:
-            self.skipTest(f"COO only supports int64 index type")
+            self.skipTest("COO only supports int64 index type")
 
         net = EltwiseNet()
         for sparse_input in self.generate_simple_inputs(
