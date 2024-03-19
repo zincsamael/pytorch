@@ -81,7 +81,7 @@ def draw_buffers(nodes: List[BaseSchedulerNode], print_graph=False, fname=None):
             dtype = node.data.dtype
 
         metadata = TensorMetadata(
-            group, dtype, None, None, None, None, None, None, None, None, None, None  # type: ignore[arg-type]
+            None, group, dtype, None, None, None, None, None, None, None, None, None, None  # type: ignore[arg-type]
         )
         node.meta["tensor_meta"] = metadata
 
