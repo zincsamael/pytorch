@@ -3,10 +3,10 @@
 import torch
 
 from torch.testing._internal.common_utils import (
-    TestCase,
     instantiate_parametrized_tests,
     parametrize,
     run_tests,
+    TestCase,
 )
 
 

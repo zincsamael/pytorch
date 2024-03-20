@@ -10,13 +10,13 @@ import torch
 from torch import Tensor
 from torch._subclasses.fake_tensor import FakeTensor
 from torch._subclasses.functional_tensor import FunctionalTensor
+from torch._subclasses.meta_utils import is_sparse_any
 from torch.fx.experimental.symbolic_shapes import definitely_true, sym_eq
 from torch.multiprocessing.reductions import StorageWeakRef
 from torch.utils._python_dispatch import (
     is_traceable_wrapper_subclass,
     transform_subclass,
 )
-from torch._subclasses.meta_utils import is_sparse_any
 
 
 def to_fun(t):
@@ -167,7 +167,7 @@ def has_metadata_mutation(f_arg, arg, *, check_only_storage_mutation: bool):
             same_storages = False
         else:
             same_storages = StorageWeakRef(arg.untyped_storage()) == StorageWeakRef(
-              arg_after.untyped_storage()
+                arg_after.untyped_storage()
             )
         has_storage_metadata_mutation = maybe_storage_changed and not same_storages
         if check_only_storage_mutation:

@@ -267,11 +267,11 @@ def _create_meta_tensor_meta(
         is_quantized=False,
         qparams={},
         # Sparse
-        batch_dim = None,
-        sparse_dim = None,
-        dense_dim = None,
-        blocksize = None,
-        idx_dtype = None,
+        batch_dim=None,
+        sparse_dim=None,
+        dense_dim=None,
+        blocksize=None,
+        idx_dtype=None,
     )
 
 
