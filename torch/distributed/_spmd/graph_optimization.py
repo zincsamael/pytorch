@@ -257,7 +257,6 @@ def _create_meta_tensor_meta(
     val: FakeTensor,
 ) -> TensorMetadata:
     return TensorMetadata(
-        layout=val.layout,
         shape=val.shape,
         dtype=val.dtype,
         requires_grad=val.requires_grad,
@@ -266,12 +265,6 @@ def _create_meta_tensor_meta(
         memory_format=None,
         is_quantized=False,
         qparams={},
-        # Sparse
-        batch_dim=None,
-        sparse_dim=None,
-        dense_dim=None,
-        blocksize=None,
-        idx_dtype=None,
     )
 
 

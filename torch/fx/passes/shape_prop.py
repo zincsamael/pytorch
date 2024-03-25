@@ -8,7 +8,6 @@ from torch._dispatch.python import enable_python_dispatcher
 from torch.fx.node import Node, map_aggregate
 from typing import Any, Tuple, NamedTuple, Optional, Dict
 from torch.fx._compatibility import compatibility
-from torch._subclasses.meta_utils import is_sparse_any
 from torch._guards import detect_fake_mode
 
 __all__ = ['TensorMetadata', 'ShapeProp']
@@ -19,7 +18,6 @@ class TensorMetadata(NamedTuple):
     # about a tensor within a PyTorch program.
 
     # General Tensor metadata
-    layout : torch.layout
     shape : torch.Size
     dtype : torch.dtype
     requires_grad : bool
@@ -30,44 +28,10 @@ class TensorMetadata(NamedTuple):
     is_quantized : bool
     qparams: Dict[str, Any]
 
-    # Sparse metadata when layout in [ torch.sparse_coo/csr/csc/bsr/bsc ]
-    #   batch_dim + sparse_dim + dense_dim = ndim = len(shape)
-    #   blocksize for bsr/bsc
-    #   idx_dtype denote the types used for compressed indices and positions
-    batch_dim : Optional[int]
-    sparse_dim : Optional[int]
-    dense_dim : Optional[int]
-    blocksize : Optional[Tuple[int, int]]
-    idx_dtype : Optional[torch.dtype]
-
-
-def _extract_sparse_tensor_metadata(
-    t: torch.Tensor,
-) -> Tuple[int, int, int, Optional[Tuple[int, int]], Optional[torch.dtype]]:
-    batch_dim = t.ndim - t.dense_dim() - t.sparse_dim()
-    # Set block size.
-    if t.layout is torch.sparse_bsr or t.layout is torch.sparse_bsc:
-        blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
-    else:
-        blocksize = None
-    # Set index type.
-    if t.layout is torch.sparse_coo:
-        idx_dtype = t._indices().dtype  # supports uncoalesced COO tensors
-    elif t.layout is torch.sparse_csr or t.layout is torch.sparse_bsr:
-        idx_dtype = t.col_indices().dtype
-    else:
-        idx_dtype = t.row_indices().dtype
-    # Return sparse metadata.
-    return (batch_dim, t.sparse_dim(), t.dense_dim(), blocksize, idx_dtype)
-
-
-def _extract_tensor_metadata(
-    result: torch.Tensor, include_contiguity=True
-) -> TensorMetadata:
+def _extract_tensor_metadata(result : torch.Tensor, include_contiguity=True) -> TensorMetadata:
     """
     Extract a TensorMetadata NamedTuple describing `result`.
     """
-    layout = result.layout
     shape = result.shape
     dtype = result.dtype
     requires_grad = result.requires_grad
@@ -102,17 +66,8 @@ def _extract_tensor_metadata(
             qparams["zero_point"] = result.q_per_channel_zero_points().tolist()  # type: ignore[assignment]
             qparams["axis"] = result.q_per_channel_axis()  # type: ignore[assignment]
 
-    batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype = (
-        _extract_sparse_tensor_metadata(result) if is_sparse_any(result)
-        else (None, None, None, None, None)
-    )
-
     return TensorMetadata(
-        layout, shape, dtype, requires_grad, stride, memory_format,
-        is_quantized, qparams,  # quantized
-        batch_dim, sparse_dim, dense_dim, blocksize, idx_dtype  # sparse
-    )
-
+        shape, dtype, requires_grad, stride, memory_format, is_quantized, qparams)
 
 @compatibility(is_backward_compatible=True)
 class ShapeProp(torch.fx.Interpreter):
