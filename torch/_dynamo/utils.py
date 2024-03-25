@@ -628,9 +628,10 @@ def proxy_args_kwargs(args, kwargs):
         from .exc import unimplemented
         from .variables.base import typestr
 
-        raise unimplemented(
-            f"call_function args: {typestr(*args)} {typestr(*list(kwargs.values()))}"
-        ) from e
+        unimplemented(
+            f"call_function args: {typestr(*args)} {typestr(*list(kwargs.values()))}",
+            from_exc=e,
+        )
 
 
 @dataclasses.dataclass
@@ -882,12 +883,12 @@ def is_namedtuple(obj):
 
 
 def is_namedtuple_cls(cls):
-    """Test if an object is a namedtuple or a torch.return_types.* quasi-namedtuple"""
+    """Test if an object is a namedtuple or a (torch.return_types|torch.autograd.forward_ad).* quasi-namedtuple"""
     try:
         if issubclass(cls, tuple):
             bases = getattr(cls, "__bases__", []) or [None]
             module = getattr(cls, "__module__", None)
-            return module == "torch.return_types" or (
+            return module in ("torch.return_types", "torch.autograd.forward_ad") or (
                 bases[0] is tuple and hasattr(cls, "_make") and hasattr(cls, "_fields")
             )
     except TypeError:
@@ -1216,7 +1217,7 @@ def wrap_fake_exception(fn):
 
         msg = f"Unsupported: {e.reason} with fake tensor propagation."
         log.warning(msg)
-        raise unimplemented(msg) from e
+        unimplemented(msg, from_exc=e)
 
 
 def deepcopy_to_fake_tensor(obj, fake_mode):
@@ -1813,7 +1814,7 @@ def run_node(tracer, node, args, kwargs, nnmodule):
             # NB: mimic how wrap_fake_exception does it
             from .exc import unimplemented
 
-            raise unimplemented(make_error_message(e)) from e
+            unimplemented(make_error_message(e), from_exc=e)
         except Exception as e:
             raise RuntimeError(make_error_message(e)).with_traceback(
                 e.__traceback__
@@ -2580,3 +2581,18 @@ def invalid_removeable_handle():
         pass
 
     return RemovableHandle(Invalid())
+
+
+# Returns a "proxy" (new object with the same class and dict) for (non-GraphModule) nn.Module's.
+# Attribute changes to the original object/proxy will be reflected in the other.
+# This is useful for cases where we want a keep-alive reference to a module without increasing
+# its reference count.
+def nn_module_proxy(mod):
+    if not isinstance(mod, torch.nn.Module):
+        return mod
+    if isinstance(mod, torch.fx.GraphModule):
+        # Dynamo-generated GM's shouldn't contain user-created GM's
+        return mod
+    proxy = mod.__class__.__new__(mod.__class__)
+    proxy.__dict__ = mod.__dict__
+    return proxy
