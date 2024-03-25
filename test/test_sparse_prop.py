@@ -166,7 +166,6 @@ class TestSparseProp(TestCase):
                     self.assertEqual(d, sparse_input.dense_dim())
                     self.assertEqual(bsz, blocksize)
                     self.assertEqual(itp, itype)
-                    pass
                 else:
                     self.assertEqual(meta, None)
 
