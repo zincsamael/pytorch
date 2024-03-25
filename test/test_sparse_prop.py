@@ -114,14 +114,12 @@ class TestSparseProp(TestCase):
                     self.assertIsInstance(meta, torch.Tensor)
                     self.assertEqual(meta.layout, layout)
                     self.assertEqual(meta.dtype, dtype)
-                    (batch, sparse, dense, bsz, idtp) = extract_sparse_tensor_metadata(
-                        meta
-                    )
-                    self.assertEqual(batch, batch_dim)
-                    self.assertEqual(sparse, sparse_input.sparse_dim())
-                    self.assertEqual(dense, sparse_input.dense_dim())
+                    (b, s, d, bsz, itp) = extract_sparse_tensor_metadata(meta)
+                    self.assertEqual(b, batch_dim)
+                    self.assertEqual(s, sparse_input.sparse_dim())
+                    self.assertEqual(d, sparse_input.dense_dim())
                     self.assertEqual(bsz, blocksize)
-                    self.assertEqual(idtp, itype)
+                    self.assertEqual(itp, itype)
                 elif i == 1:
                     self.assertIsInstance(meta, FakeTensor)
                     self.assertEqual(meta.layout, torch.strided)
@@ -162,18 +160,12 @@ class TestSparseProp(TestCase):
                     self.assertIsInstance(meta, torch.Tensor if i == 0 else FakeTensor)
                     self.assertEqual(meta.layout, layout)
                     self.assertEqual(meta.dtype, dtype)
-                    (
-                        batchd,
-                        sparsed,
-                        densed,
-                        bsz,
-                        idtp,
-                    ) = extract_sparse_tensor_metadata(meta)
-                    self.assertEqual(batchd, batch_dim)
-                    self.assertEqual(sparsed, sparse_input.sparse_dim())
-                    self.assertEqual(densed, sparse_input.dense_dim())
+                    (b, s, d, bsz, itp) = extract_sparse_tensor_metadata(meta)
+                    self.assertEqual(b, batch_dim)
+                    self.assertEqual(s, sparse_input.sparse_dim())
+                    self.assertEqual(d, sparse_input.dense_dim())
                     self.assertEqual(bsz, blocksize)
-                    self.assertEqual(idtp, itype)
+                    self.assertEqual(itp, itype)
                     pass
                 else:
                     self.assertEqual(meta, None)
