@@ -3,7 +3,7 @@
 # Test to ensure sparsity information propagates properly.
 #
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import torch
 from torch._subclasses.fake_tensor import FakeTensor
