@@ -3,9 +3,10 @@
 # Test to ensure sparsity information propagates properly.
 #
 
+from typing import Tuple, Optional
+
 import torch
 from torch._subclasses.fake_tensor import FakeTensor
-from typing import Tuple, Optional
 
 from torch.testing._internal.common_utils import (
     instantiate_parametrized_tests,
