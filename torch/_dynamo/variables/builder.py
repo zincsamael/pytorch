@@ -1897,18 +1897,22 @@ def wrap_to_fake_tensor_and_record(
                 )
 
         tx.output.tracing_context.tensor_to_context[e] = symbolic_context
-
-        if is_sparse_any(fake_e):
-            # TODO: generalize for TensorGuards
-            tx.output.tensor_weakref_to_sizes_strides[e] = {
-                "size": fake_e.size(),
-                "stride": (),
-            }
-        else:
-            tx.output.tensor_weakref_to_sizes_strides[e] = {
-                "size": fake_e.size(),
-                "stride": fake_e.stride(),
-            }
+        # RESOLVE CONFLICT AT DESKTOP
+        #if is_sparse_any(fake_e):
+        #    # TODO: generalize for TensorGuards
+        #    tx.output.tensor_weakref_to_sizes_strides[e] = {
+        #        "size": fake_e.size(),
+        #        "stride": (),
+        #    }
+        #else:
+        #    tx.output.tensor_weakref_to_sizes_strides[e] = {
+        #        "size": fake_e.size(),
+        #        "stride": fake_e.stride(),
+        #    }
+        tx.output.input_source_to_sizes_strides[source] = {
+            "size": fake_e.size(),
+            "stride": fake_e.stride(),
+        }
 
         if (
             is_tensor
