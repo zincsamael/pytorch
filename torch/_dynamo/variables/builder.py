@@ -1902,7 +1902,7 @@ def wrap_to_fake_tensor_and_record(
         if is_sparse_any(fake_e):
             tx.output.input_source_to_sizes_strides[source] = {
                  "size": fake_e.size(),
-                 "stride": (0,) * fake_e.ndim,
+                 "stride": (1,) * fake_e.ndim,
                  "values_size": fake_e._values().size(),
                  "values_stride": fake_e._values().stride(),
             }
