@@ -1,6 +1,6 @@
 # Owner(s): ["module: sparse"]
 #
-# Test to ensure sparsity information propagates properly.
+# Test to ensure sparsity information propagates properly into traced graph.
 #
 
 from typing import Optional, Tuple
@@ -106,7 +106,7 @@ class TestSparseProp(TestCase):
                 blocksize = sparse_input.values().shape[batch_dim + 1 : batch_dim + 3]
             else:
                 blocksize = None
-            # Build the trace graph.
+            # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/sum/output.
             for i, node in enumerate(prog.graph.nodes):
@@ -152,7 +152,7 @@ class TestSparseProp(TestCase):
                 blocksize = sparse_input.values().shape[batch_dim + 1 : batch_dim + 3]
             else:
                 blocksize = None
-            # Build the trace graph.
+            # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/neg/sin/mul/relu/output.
             for i, node in enumerate(prog.graph.nodes):
