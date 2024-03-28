@@ -5,7 +5,10 @@
 
 from typing import Optional, Tuple
 
+import sys
 import torch
+import unittest
+
 from torch._subclasses.fake_tensor import FakeTensor
 
 from torch.testing._internal.common_utils import (
@@ -82,6 +85,9 @@ class TestSparseProp(TestCase):
     def setUp(self):
         TestCase.setUp(self)
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
+    )
     @parametrize("dtype", SPARSE_DTYPES)
     @parametrize("itype", SPARSE_ITYPES)
     @parametrize("layout", SPARSE_LAYOUTS)
@@ -128,6 +134,9 @@ class TestSparseProp(TestCase):
                 else:
                     self.assertEqual(meta, None)
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
+    )
     @parametrize("dtype", SPARSE_DTYPES)
     @parametrize("itype", SPARSE_ITYPES)
     @parametrize("layout", SPARSE_LAYOUTS)

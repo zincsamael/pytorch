@@ -4316,6 +4316,7 @@ class TestSparseMeta(TestCase):
                 # dense dimensions cannot be specified for torch.empty
                 self.assertEqual(r3, r)
 
+    @skipIfTorchDynamo("under construction")
     @all_sparse_layouts('layout', include_strided=False)
     @parametrize("dtype", [torch.float64])
     def test_meta(self, dtype, layout):

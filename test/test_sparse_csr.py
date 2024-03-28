@@ -2114,6 +2114,7 @@ class TestSparseCSR(TestCase):
                 with self.assertRaisesRegex(RuntimeError, re.escape(str(msg))):
                     test(is_sparse=True)
 
+    @skipIfTorchDynamo("under construction")
     @sparse_compressed_nonblock_layouts()
     @dtypes(torch.float, torch.double)
     def test_add(self, device, layout, dtype):
