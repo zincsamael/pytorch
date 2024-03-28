@@ -42,6 +42,7 @@ from torch.testing._internal.common_utils import (
     IS_FBCODE,
     first_sample,
     parametrize,
+    skipCUDAIf,
     skipIfTorchInductor,
     slowTest,
     unMarkDynamoStrictTest,

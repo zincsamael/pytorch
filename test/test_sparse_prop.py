@@ -3,11 +3,11 @@
 # Test to ensure sparsity information propagates properly into traced graph.
 #
 
+import sys
+import unittest
 from typing import Optional, Tuple
 
-import sys
 import torch
-import unittest
 
 from torch._subclasses.fake_tensor import FakeTensor
 
