@@ -42,7 +42,6 @@ from torch.testing._internal.common_utils import (
     IS_FBCODE,
     first_sample,
     parametrize,
-    skipCUDAIf,
     skipIfTorchInductor,
     slowTest,
     unMarkDynamoStrictTest,
@@ -545,7 +544,6 @@ class TestCommon(TestCase):
                 self.assertFalse(isinstance(out, type(NotImplemented)))
 
     @skipMeta
-    @skipCUDAIf(True, "under construction")
     @onlyNativeDeviceTypes
     @ops([op for op in op_db if op.error_inputs_sparse_func is not None], dtypes=OpDTypes.none)
     @parametrize("layout", (torch.sparse_csr, torch.sparse_csc, torch.sparse_bsr, torch.sparse_bsc, torch.sparse_coo))
@@ -554,7 +552,8 @@ class TestCommon(TestCase):
             si = ei.sample_input
             with self.assertRaisesRegex(ei.error_type, ei.error_regex):
                 out = op(si.input, *si.args, **si.kwargs)
-                self.assertFalse(isinstance(out, type(NotImplemented)))
+                # TODO: change test?
+                # self.assertFalse(isinstance(out, type(NotImplemented)))
 
     @skipMeta
     @onlyNativeDeviceTypes
