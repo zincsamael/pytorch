@@ -1939,6 +1939,7 @@ class TestSparseCSR(TestCase):
             test_shape(7, 8, 9, 20, False, index_dtype, (1, 1))
             test_shape(7, 8, 9, 20, True, index_dtype, (1, 1))
 
+    @skipIfTorchDynamo("under sparse construction")
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
     @precisionOverride({torch.double: 1e-8, torch.float: 1e-4, torch.bfloat16: 0.6,
@@ -2114,7 +2115,7 @@ class TestSparseCSR(TestCase):
                 with self.assertRaisesRegex(RuntimeError, re.escape(str(msg))):
                     test(is_sparse=True)
 
-    @skipIfTorchDynamo("under construction")
+    @skipIfTorchDynamo("under sparse construction")
     @sparse_compressed_nonblock_layouts()
     @dtypes(torch.float, torch.double)
     def test_add(self, device, layout, dtype):

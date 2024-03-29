@@ -61,6 +61,7 @@ from torch.testing._internal.common_utils import (
     instantiate_parametrized_tests,
     parametrize,
     run_tests,
+    skipIfTorchDynamo,
     TemporaryDirectoryName,
     TemporaryFileName,
     TEST_WITH_ASAN,
@@ -2464,6 +2465,7 @@ class TestTorchTidyProfiler(TestCase):
             node.extra_fields.sequence_number + 1,
             mul_node.extra_fields.sequence_number)
 
+    @skipIfTorchDynamo("under sparse construction")
     def test_sparse_tensors(self):
         i = [[0, 1, 1], [2, 0, 2]]
         v = [3, 4, 5]
