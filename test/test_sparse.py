@@ -5214,6 +5214,7 @@ class TestSparseAny(TestCase):
             result = mask.to_dense().sparse_mask(mask)
             self.assertEqual(result, mask)
 
+    @skipIfTorchDynamo("under sparse construction")
     @all_sparse_layouts('layout', include_strided=False)
     @parametrize("masked", [subtest(False, name='nonmasked'), subtest(True, name='masked')])
     @parametrize("fast_mode", [subtest(False, name='slow'), subtest(True, name='fast')])

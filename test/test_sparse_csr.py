@@ -1983,6 +1983,7 @@ class TestSparseCSR(TestCase):
             m2 = maybe_transpose(t3, torch.randn(50, 25, device=device).to(dtype))
             _test_addmm_addmv(self, torch.addmm, M, m1, m2, transpose_out=t4, layout=layout, mode="all_sparse")
 
+    @skipIfTorchDynamo("under sparse construction")
     @onlyCPU
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
