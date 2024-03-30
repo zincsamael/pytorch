@@ -2021,6 +2021,7 @@ class TestSparseCSR(TestCase):
     @parametrize("k", [0, 1, 8])
     @parametrize("n", [0, 1, 10])
     @parametrize("m", [0, 1, 25])
+    @skipIfTorchDynamo("under sparse construction")
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
     @dtypesIfCUDA(*floating_types_and(torch.complex64,

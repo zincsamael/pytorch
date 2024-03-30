@@ -5256,6 +5256,7 @@ class TestSparseAny(TestCase):
                 gradcheck(func, x.requires_grad_(True), masked=masked, fast_mode=fast_mode)
 
     @onlyCPU
+    @skipIfTorchDynamo("under sparse construction")
     @all_sparse_layouts('layout', include_strided=False)
     @dtypes(torch.double)
     def test_dataloader(self, device, layout, dtype):
