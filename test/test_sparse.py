@@ -4971,6 +4971,7 @@ class TestSparseAny(TestCase):
             self.skipTest('no sample inputs')
 
     @onlyNativeDeviceTypes
+    @skipIfTorchDynamo("under sparse construction")
     @suppress_warnings
     @parametrize("mth", [subtest(mth, name=mth.__name__)
                          for mth in [torch.Tensor.is_coalesced,
