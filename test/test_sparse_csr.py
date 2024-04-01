@@ -1704,6 +1704,7 @@ class TestSparseCSR(TestCase):
 
     @parametrize("matrix_shape", [(3, 3), (5, 7), (11, 9)], name_fn=lambda x: "shape_{}x{}".format(*x))
     @dtypes(torch.float32, torch.float64, torch.complex64, torch.complex128)
+    @skipIfTorchDynamo("under sparse construction")
     @onlyCPU
     def test_addmv(self, device, dtype, matrix_shape):
         mat = torch.randn(matrix_shape, dtype=dtype, device=device)

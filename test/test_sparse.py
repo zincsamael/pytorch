@@ -5014,6 +5014,7 @@ class TestSparseAny(TestCase):
                 mth(inp)
 
     @onlyNativeDeviceTypes
+    @skipIfTorchDynamo("under sparse construction")
     @all_sparse_layouts('layout', include_strided=not True)
     @dtypes(torch.float64, torch.cdouble)
     @parametrize("masked", [subtest(False, name='sparse'), subtest(True, name='masked')])
