@@ -2783,6 +2783,7 @@ class TestSparseCSR(TestCase):
         not _check_cusparse_sddmm_available(),
         "cuSparse Generic API SDDMM is not available"
     )
+    @skipIfTorchDynamo("under sparse construction")
     @dtypes(torch.float64)
     def test_autograd_dense_output_addmm(self, device, dtype):
         from torch.testing._internal.common_methods_invocations import sample_inputs_addmm
@@ -2855,6 +2856,7 @@ class TestSparseCSR(TestCase):
                         self.assertEqual(a.grad, dense_a.grad)
 
     @skipCPUIfNoMklSparse
+    @skipIfTorchDynamo("under sparse construction")
     @dtypes(torch.float64)
     def test_autograd_dense_output_addmv(self, device, dtype):
         from torch.testing._internal.common_methods_invocations import sample_inputs_addmv

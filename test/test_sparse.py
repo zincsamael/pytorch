@@ -4740,6 +4740,7 @@ class TestSparseAny(TestCase):
     @dtypes(torch.float64, torch.complex128)
     @parametrize("index_dtype", [torch.int64])
     @gradcheck_semantics()
+    @skipIfTorchDynamo("under sparse construction")
     def test_gradcheck_to_dense(self, from_layout, device, dtype, index_dtype, gradcheck):
         for t in self.generate_simple_inputs(
                 from_layout, device=device, dtype=dtype, index_dtype=index_dtype):
@@ -4755,6 +4756,7 @@ class TestSparseAny(TestCase):
     @all_sparse_layouts('to_layout', include_strided=False)
     @dtypes(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @parametrize("index_dtype", [torch.int32, torch.int64])
+    @skipIfTorchDynamo("under sparse construction")
     def test_to_sparse(self, from_layout, to_layout, device, dtype, index_dtype):
         """
         This test tests conversion from any layout to any sparse layout.
