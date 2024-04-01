@@ -2113,7 +2113,6 @@ graph(%Ra, %Rb):
         self.checkScript(test_sparse_addmm, (torch.randn(2, 4), get_sparse(), torch.randn(3, 4)))
         self.checkScript(test_sparse_addmm_alpha_beta, (torch.randn(2, 4), get_sparse(), torch.randn(3, 4)))
 
-    @skipIfTorchDynamo("TorchDynamo fails with unknown reason")
     @suppress_warnings
     def test_sparse_csr_tensors(self):
         @torch.jit.ignore

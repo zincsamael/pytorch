@@ -1678,7 +1678,6 @@ class TestSparseCSR(TestCase):
     @parametrize("index_dtype", [torch.int32, torch.int64])
     @parametrize("noncontiguous", [True, False])
     @unittest.skipIf(not TEST_SCIPY, "SciPy not found")
-    @skipIfTorchDynamo("under sparse construction")
     @dtypes(torch.float32, torch.float64, torch.complex64, torch.complex128)
     def test_block_addmv(self, device, dtype, index_dtype, block_size, noncontiguous):
         # TODO: Explicitly disable block size 1 support
@@ -1705,7 +1704,6 @@ class TestSparseCSR(TestCase):
 
     @parametrize("matrix_shape", [(3, 3), (5, 7), (11, 9)], name_fn=lambda x: "shape_{}x{}".format(*x))
     @dtypes(torch.float32, torch.float64, torch.complex64, torch.complex128)
-    @skipIfTorchDynamo("under sparse construction")
     @onlyCPU
     def test_addmv(self, device, dtype, matrix_shape):
         mat = torch.randn(matrix_shape, dtype=dtype, device=device)
@@ -1941,7 +1939,6 @@ class TestSparseCSR(TestCase):
             test_shape(7, 8, 9, 20, False, index_dtype, (1, 1))
             test_shape(7, 8, 9, 20, True, index_dtype, (1, 1))
 
-    @skipIfTorchDynamo("under sparse construction")
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
     @precisionOverride({torch.double: 1e-8, torch.float: 1e-4, torch.bfloat16: 0.6,
@@ -1985,7 +1982,6 @@ class TestSparseCSR(TestCase):
             m2 = maybe_transpose(t3, torch.randn(50, 25, device=device).to(dtype))
             _test_addmm_addmv(self, torch.addmm, M, m1, m2, transpose_out=t4, layout=layout, mode="all_sparse")
 
-    @skipIfTorchDynamo("under sparse construction")
     @onlyCPU
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
@@ -2023,7 +2019,6 @@ class TestSparseCSR(TestCase):
     @parametrize("k", [0, 1, 8])
     @parametrize("n", [0, 1, 10])
     @parametrize("m", [0, 1, 25])
-    @skipIfTorchDynamo("under sparse construction")
     @skipCPUIfNoMklSparse
     @dtypes(*floating_and_complex_types())
     @dtypesIfCUDA(*floating_types_and(torch.complex64,
@@ -2119,7 +2114,6 @@ class TestSparseCSR(TestCase):
                 with self.assertRaisesRegex(RuntimeError, re.escape(str(msg))):
                     test(is_sparse=True)
 
-    @skipIfTorchDynamo("under sparse construction")
     @sparse_compressed_nonblock_layouts()
     @dtypes(torch.float, torch.double)
     def test_add(self, device, layout, dtype):
@@ -2784,7 +2778,6 @@ class TestSparseCSR(TestCase):
         not _check_cusparse_sddmm_available(),
         "cuSparse Generic API SDDMM is not available"
     )
-    @skipIfTorchDynamo("under sparse construction")
     @dtypes(torch.float64)
     def test_autograd_dense_output_addmm(self, device, dtype):
         from torch.testing._internal.common_methods_invocations import sample_inputs_addmm
@@ -2857,7 +2850,6 @@ class TestSparseCSR(TestCase):
                         self.assertEqual(a.grad, dense_a.grad)
 
     @skipCPUIfNoMklSparse
-    @skipIfTorchDynamo("under sparse construction")
     @dtypes(torch.float64)
     def test_autograd_dense_output_addmv(self, device, dtype):
         from torch.testing._internal.common_methods_invocations import sample_inputs_addmv
