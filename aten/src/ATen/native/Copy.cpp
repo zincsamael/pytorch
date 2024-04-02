@@ -206,8 +206,9 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
     return self;
   }
 
+  // Copies from meta are also OK and just ignored.
   if (src.is_meta()) {
-    TORCH_CHECK_NOT_IMPLEMENTED(false, "Cannot copy out of meta tensor; no data!")
+    return self;
   }
 
   // Re-dispatch copies when either src or self device not implemented here (e.g. XLA).
