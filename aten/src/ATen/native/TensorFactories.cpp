@@ -1388,6 +1388,7 @@ Tensor zeros_like(
         !(optional_memory_format.has_value()),
         "memory format option is only supported by strided tensors");
     auto res = at::empty({0}, self.options().merge_in(options)); // to be resized
+
     if (self.is_sparse()) {
       res.sparse_resize_and_clear_(
           self.sizes(), self.sparse_dim(), self.dense_dim());
