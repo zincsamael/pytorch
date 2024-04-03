@@ -25,8 +25,8 @@ from torch.serialization import check_module_version_greater_or_equal, get_defau
     set_default_load_endianness, LoadEndianness
 
 from torch.testing._internal.common_utils import (
-    IS_FILESYSTEM_UTF8_ENCODING, TemporaryDirectoryName, TestCase, IS_WINDOWS,
-    TEST_DILL, TEST_WITH_TORCHDYNAMO, run_tests, download_file, BytesIOContext,
+    IS_FILESYSTEM_UTF8_ENCODING, TemporaryDirectoryName,
+    TestCase, IS_WINDOWS, TEST_DILL, run_tests, download_file, BytesIOContext,
     TemporaryFileName, parametrize, instantiate_parametrized_tests,
     AlwaysWarnTypedStorageRemoval,
 )
