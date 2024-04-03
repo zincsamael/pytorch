@@ -398,22 +398,18 @@ class SerializationMixin:
                     f"`{compressed_indices_name}[[]..., 0[]] == 0` is not satisfied."):
                 y = torch.load(f)
 
-    @unittest.skipIf(TEST_WITH_TORCHDYNAMO, "under sparse construction")
     def test_serialization_sparse_csr_invalid(self):
         self._test_serialization_sparse_compressed_invalid(
             torch.Tensor.to_sparse_csr, torch.Tensor.crow_indices, torch.Tensor.col_indices)
 
-    @unittest.skipIf(TEST_WITH_TORCHDYNAMO, "under sparse construction")
     def test_serialization_sparse_csc_invalid(self):
         self._test_serialization_sparse_compressed_invalid(
             torch.Tensor.to_sparse_csc, torch.Tensor.ccol_indices, torch.Tensor.row_indices)
 
-    @unittest.skipIf(TEST_WITH_TORCHDYNAMO, "under sparse construction")
     def test_serialization_sparse_bsr_invalid(self):
         self._test_serialization_sparse_compressed_invalid(
             lambda x: x.to_sparse_bsr((1, 1)), torch.Tensor.crow_indices, torch.Tensor.col_indices)
 
-    @unittest.skipIf(TEST_WITH_TORCHDYNAMO, "under sparse construction")
     def test_serialization_sparse_bsc_invalid(self):
         self._test_serialization_sparse_compressed_invalid(
             lambda x: x.to_sparse_bsc((1, 1)), torch.Tensor.ccol_indices, torch.Tensor.row_indices)

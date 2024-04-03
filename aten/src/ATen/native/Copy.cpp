@@ -206,8 +206,10 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
     return self;
   }
 
-  // Copies from meta are also OK and just ignored.
+  // Copies from meta are also OK and can be done directly.
+  // TODO: is this right?!
   if (src.is_meta()) {
+    self = src;
     return self;
   }
 

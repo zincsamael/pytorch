@@ -98,6 +98,7 @@ class TestSparseProp(TestCase):
             # Invoke the dynamo clone input method directly.
             sparse_copy = torch._dynamo.utils.clone_input(sparse_input)
             # Make sure copy is successful.
+            self.assertEqual(sparse_input.dtype, sparse_copy.dtype)
             self.assertEqual(sparse_input.layout, sparse_copy.layout)
             self.assertEqual(sparse_input.shape, sparse_copy.shape)
 

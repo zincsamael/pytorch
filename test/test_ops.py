@@ -543,7 +543,6 @@ class TestCommon(TestCase):
                 out = op(si.input, *si.args, **si.kwargs)
                 self.assertFalse(isinstance(out, type(NotImplemented)))
 
-    # TODO: change sparse test into functional test (under sparse construction)
     @skipMeta
     @onlyNativeDeviceTypes
     @ops([op for op in op_db if op.error_inputs_sparse_func is not None], dtypes=OpDTypes.none)
