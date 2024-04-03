@@ -636,10 +636,10 @@ class OutputGraph:
             if t.layout is torch.strided:
                 for i, s in enumerate(t.stride()):
                     bind_symint(s, TensorPropertySource(src, TensorProperty.STRIDE, i))
-            bind_symint(
-                t.storage_offset(),
-                TensorPropertySource(src, TensorProperty.STORAGE_OFFSET),
-            )
+                bind_symint(
+                    t.storage_offset(),
+                    TensorPropertySource(src, TensorProperty.STORAGE_OFFSET),
+                )
             if is_traceable_wrapper_subclass(t):
                 attrs, ctx = t.__tensor_flatten__()
                 for attr in attrs:
