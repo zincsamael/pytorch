@@ -1927,11 +1927,12 @@ def wrap_to_fake_tensor_and_record(
         if is_sparse_any(fake_e):
             # TODO: for TensorGuards, this eventually may need more
             #       fields for the size/stride of any other constituents
+            values = fake_e._values() if fake_e.is_sparse else fake_e.values()
             tx.output.input_source_to_sizes_strides[source] = {
                 "size": fake_e.size(),
                 "stride": (1,) * fake_e.ndim,
-                "values_size": fake_e._values().size(),
-                "values_stride": fake_e._values().stride(),
+                "values_size": values.size(),
+                "values_stride": values.stride(),
             }
         else:
             tx.output.input_source_to_sizes_strides[source] = {

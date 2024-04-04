@@ -53,7 +53,6 @@
 #include <ATen/ops/sparse_bsc_tensor_native.h>
 #include <ATen/ops/sparse_dim_native.h>
 #include <ATen/ops/values_native.h>
-#include <ATen/ops/_values_native.h>
 #include <ATen/ops/_validate_compressed_sparse_indices.h>
 #include <ATen/ops/where.h>
 #endif
@@ -761,10 +760,6 @@ Tensor& copy_sparse_compressed_(Tensor& self, const Tensor& src, bool non_blocki
 // Access members of CSR tensors.
 int64_t _nnz_sparse_csr(const SparseCsrTensor& self) {
   return get_sparse_csr_impl(self)->nnz();
-}
-
-Tensor _values_sparse_csr(const Tensor& self) {
-  return get_sparse_csr_impl(self)->values();
 }
 
 Tensor values_sparse_csr(const Tensor& self) {
