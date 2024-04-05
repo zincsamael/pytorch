@@ -43,6 +43,23 @@ SPARSE_LAYOUTS = [
 ]
 
 
+# Returns expected values.
+def expected_values(
+    t: torch.Tensor,
+) -> Tuple[int, Optional[Tuple[int, int]], torch.dtype]:
+    # Compute batch dimension.
+    batch_dim = t.ndim - t.sparse_dim() - t.dense_dim()
+    # Determine block size from values shape.
+    if t.layout in {torch.sparse_bsr, torch.sparse_bsc}:
+        blocksize = t.values().shape[batch_dim + 1 : batch_dim + 3]
+    else:
+        blocksize = None
+    # COO always makes the indices int64.
+    index_type = torch.int64 if torch.sparse_coo else itype
+    # Return expected values.
+    return (batch_dim, blocksize, index_type)
+
+
 # Ensures we can extract sparsity information from stored meta data.
 def extract_sparse_tensor_metadata(
     t: torch.Tensor,
@@ -62,6 +79,14 @@ def extract_sparse_tensor_metadata(
         idx_dtype = t.row_indices().dtype
     # Return sparse metadata.
     return (batch_dim, t.sparse_dim(), t.dense_dim(), blocksize, idx_dtype)
+
+
+class IdNet(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x
 
 
 class SumNet(torch.nn.Module):
@@ -108,13 +133,40 @@ class TestSparseProp(TestCase):
     @parametrize("dtype", SPARSE_DTYPES)
     @parametrize("itype", SPARSE_ITYPES)
     @parametrize("layout", SPARSE_LAYOUTS)
-    def test_sumnet(self, dtype, itype, layout):
-        # TODO: support more cases
-        if layout != torch.sparse_coo:
-            self.skipTest("layout support not yet implemented")
-        if layout == torch.sparse_coo and itype != torch.int64:
-            self.skipTest("COO only supports int64 index type")
+    def test_idnet(self, dtype, itype, layout):
+        net = IdNet()
+        for sparse_input in self.generate_simple_inputs(
+            layout,
+            device="cpu",
+            dtype=dtype,
+            index_dtype=itype,
+        ):
+            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
+            # Build the traced graph.
+            prog = torch.export.export(net, (sparse_input,))
+            # Test arg/output.
+            for i, node in enumerate(prog.graph.nodes):
+                meta = node.meta.get("val", None)
+                if i == 0:
+                    self.assertIsInstance(meta, torch.Tensor)
+                    self.assertEqual(meta.layout, layout)
+                    self.assertEqual(meta.dtype, dtype)
+                    (b, s, d, bsz, itp) = extract_sparse_tensor_metadata(meta)
+                    self.assertEqual(b, batch_dim)
+                    self.assertEqual(s, sparse_input.sparse_dim())
+                    self.assertEqual(d, sparse_input.dense_dim())
+                    self.assertEqual(bsz, blocksize)
+                    self.assertEqual(itp, index_type)
+                else:
+                    self.assertEqual(meta, None)
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
+    )
+    @parametrize("dtype", SPARSE_DTYPES)
+    @parametrize("itype", SPARSE_ITYPES)
+    @parametrize("layout", SPARSE_LAYOUTS)
+    def tost_sumnet(self, dtype, itype, layout):
         net = SumNet()
         for sparse_input in self.generate_simple_inputs(
             layout,
@@ -122,13 +174,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            batch_dim = (
-                sparse_input.ndim - sparse_input.sparse_dim() - sparse_input.dense_dim()
-            )
-            if layout in {torch.sparse_bsr, torch.sparse_bsc}:
-                blocksize = sparse_input.values().shape[batch_dim + 1 : batch_dim + 3]
-            else:
-                blocksize = None
+            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/sum/output.
@@ -143,7 +189,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(s, sparse_input.sparse_dim())
                     self.assertEqual(d, sparse_input.dense_dim())
                     self.assertEqual(bsz, blocksize)
-                    self.assertEqual(itp, itype)
+                    self.assertEqual(itp, index_type)
                 elif i == 1:
                     self.assertIsInstance(meta, FakeTensor)
                     self.assertEqual(meta.layout, torch.strided)
@@ -157,13 +203,7 @@ class TestSparseProp(TestCase):
     @parametrize("dtype", SPARSE_DTYPES)
     @parametrize("itype", SPARSE_ITYPES)
     @parametrize("layout", SPARSE_LAYOUTS)
-    def test_eltwisenet(self, dtype, itype, layout):
-        # TODO: support more cases
-        if layout != torch.sparse_coo:
-            self.skipTest("layout support not yet implemented")
-        if layout == torch.sparse_coo and itype != torch.int64:
-            self.skipTest("COO only supports int64 index type")
-
+    def tost_eltwisenet(self, dtype, itype, layout):
         net = EltwiseNet()
         for sparse_input in self.generate_simple_inputs(
             layout,
@@ -171,13 +211,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            batch_dim = (
-                sparse_input.ndim - sparse_input.sparse_dim() - sparse_input.dense_dim()
-            )
-            if layout in {torch.sparse_bsr, torch.sparse_bsc}:
-                blocksize = sparse_input.values().shape[batch_dim + 1 : batch_dim + 3]
-            else:
-                blocksize = None
+            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/neg/sin/mul/relu/output.
@@ -192,7 +226,7 @@ class TestSparseProp(TestCase):
                     self.assertEqual(s, sparse_input.sparse_dim())
                     self.assertEqual(d, sparse_input.dense_dim())
                     self.assertEqual(bsz, blocksize)
-                    self.assertEqual(itp, itype)
+                    self.assertEqual(itp, index_type)
                 else:
                     self.assertEqual(meta, None)
 

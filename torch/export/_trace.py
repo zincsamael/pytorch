@@ -33,6 +33,7 @@ from torch._export.wrappers import _wrap_submodules
 from torch._functorch.aot_autograd import aot_export_module
 from torch._guards import detect_fake_mode
 from torch._subclasses.fake_tensor import FakeTensor, FakeTensorMode
+from torch._subclasses.meta_utils import is_sparse_any
 from torch._utils_internal import log_export_usage
 from torch.export.exported_program import OutputKind
 from torch.fx.experimental.symbolic_shapes import (
@@ -514,6 +515,7 @@ def _export_non_strict(
             # For const outputs we just directly return this
             return ConstantArgument(value=node)
 
+
         assert (
             "val" in node.meta
         ), f"{node} is not a constant or a node with a 'val' metadata field"
@@ -521,7 +523,7 @@ def _export_non_strict(
         if i < len(graph_signature.input_tokens):
             # TODO: We should be checking for a different type, once we add a new type
             return TokenArgument(name=node.name)
-        elif isinstance(val, FakeTensor):
+        elif isinstance(val, FakeTensor) or is_sparse_any(val):
             return TensorArgument(name=node.name)
         elif isinstance(val, torch.SymInt):
             return SymIntArgument(name=node.name)
