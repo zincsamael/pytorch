@@ -29,6 +29,7 @@ get_envs_from_vcvarsall() {
   fi
   chmod +x temp.bat
   ./temp.bat
+  cat env.txt
   source env.txt
   rm temp.bat
   rm env.txt
