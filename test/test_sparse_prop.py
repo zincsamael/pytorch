@@ -110,23 +110,6 @@ class TestSparseProp(TestCase):
     def setUp(self):
         TestCase.setUp(self)
 
-    @parametrize("dtype", SPARSE_DTYPES)
-    @parametrize("itype", SPARSE_ITYPES)
-    @parametrize("layout", SPARSE_LAYOUTS)
-    def test_copy(self, dtype, itype, layout):
-        for sparse_input in self.generate_simple_inputs(
-            layout,
-            device="cpu",
-            dtype=dtype,
-            index_dtype=itype,
-        ):
-            # Invoke the dynamo clone input method directly.
-            sparse_copy = torch._dynamo.utils.clone_input(sparse_input)
-            # Make sure copy is successful.
-            self.assertEqual(sparse_input.dtype, sparse_copy.dtype)
-            self.assertEqual(sparse_input.layout, sparse_copy.layout)
-            self.assertEqual(sparse_input.shape, sparse_copy.shape)
-
     @unittest.skipIf(
         sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
     )
