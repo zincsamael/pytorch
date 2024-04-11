@@ -1533,7 +1533,14 @@ class CppVecOverrides(CppOverrides):
     @staticmethod
     def where(a, b, c):
         assert isinstance(V.kernel, CppVecKernel)
-        return f"decltype({b})::blendv({c}, {b}, {V.kernel._get_mask_cast(a, b.dtype)})"
+        if b.dtype == torch.bool:
+            assert c.dtype == torch.bool
+            blendv_a = f"{V.kernel._get_mask_cast(a, torch.float)}"
+            blendv_b = f"{V.kernel._get_mask_cast(b, torch.float)}"
+            blendv_c = f"{V.kernel._get_mask_cast(c, torch.float)}"
+            return f"decltype({b})::blendv({blendv_c}, {blendv_b}, {blendv_a})"
+        else:
+            return f"decltype({b})::blendv({c}, {b}, {V.kernel._get_mask_cast(a, b.dtype)})"
 
     @staticmethod
     def sign(x):
@@ -2863,20 +2870,11 @@ class CppVecKernelChecker(CppVecKernel):
         self.exit_stack = contextlib.ExitStack()
 
         # Cache all the load result
-        self.load_supported_dtypes: List[torch.dtype] = [
+        self.supported_dtypes: List[torch.dtype] = [
             torch.float,
             torch.bfloat16,
             torch.float16,
             torch.bool,
-            torch.uint8,
-            torch.int8,
-            torch.int32,
-            torch.int64,
-        ]
-        self.store_supported_dtypes: List[torch.dtype] = [
-            torch.float,
-            torch.bfloat16,
-            torch.float16,
             torch.uint8,
             torch.int8,
             torch.int32,
@@ -2901,7 +2899,7 @@ class CppVecKernelChecker(CppVecKernel):
                 self.disable_vec("not a loop")
                 return var
 
-            if load_dtype not in self.load_supported_dtypes and (
+            if load_dtype not in self.supported_dtypes and (
                 index.has(self.itervars[self.tiling_idx])
                 or free_symbol_startswith(index, "tmp")
             ):
@@ -2922,7 +2920,7 @@ class CppVecKernelChecker(CppVecKernel):
             assert opt_ctx
             opt_ctx.dtype = store_dtype
 
-            if store_dtype not in self.store_supported_dtypes:
+            if store_dtype not in self.supported_dtypes:
                 self.disable_vec(f"{store_dtype} not supported by store")
                 return self.simd_vec
 
@@ -3026,18 +3024,7 @@ class CppVecKernelChecker(CppVecKernel):
                         ):
                             opt_ctx.dtype = torch.float32
 
-                    supported_dtypes = [
-                        torch.float,
-                        torch.bfloat16,
-                        torch.float16,
-                        torch.bool,
-                        torch.uint8,
-                        torch.int8,
-                        torch.int32,
-                        torch.int64,
-                    ]
-
-                    if opt_ctx.dtype not in supported_dtypes:
+                    if opt_ctx.dtype not in self.supported_dtypes:
                         self.disable_vec(f"constant dtype: {opt_ctx.dtype}")
                     return val
 
@@ -3110,16 +3097,7 @@ class CppVecKernelChecker(CppVecKernel):
 
             @staticmethod
             def to_dtype(x, dtype, src_dtype=None):
-                if dtype not in [
-                    torch.float,
-                    torch.bfloat16,
-                    torch.float16,
-                    torch.bool,
-                    torch.uint8,
-                    torch.int8,
-                    torch.int32,
-                    torch.int64,
-                ]:
+                if dtype not in self.supported_dtypes:
                     self.disable_vec(f"to_dtype: {dtype}")
                 return x
 
