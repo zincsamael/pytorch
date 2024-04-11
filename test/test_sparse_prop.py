@@ -44,8 +44,8 @@ SPARSE_LAYOUTS = [
 
 
 # Returns expected values.
-def expected_values(
-    t: torch.Tensor,
+def expected(
+    t: torch.Tensor, itype: torch.dtype
 ) -> Tuple[int, Optional[Tuple[int, int]], torch.dtype]:
     # Compute batch dimension.
     batch_dim = t.ndim - t.sparse_dim() - t.dense_dim()
@@ -144,7 +144,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
+            (batch_dim, blocksize, index_type) = expected(sparse_input, itype)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/output.
@@ -180,7 +180,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
+            (batch_dim, blocksize, index_type) = expected(sparse_input, itype)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/sum/output.
@@ -220,7 +220,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
-            (batch_dim, blocksize, index_type) = expected_values(sparse_input)
+            (batch_dim, blocksize, index_type) = expected(sparse_input, itype)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/neg/sin/mul/relu/output.
