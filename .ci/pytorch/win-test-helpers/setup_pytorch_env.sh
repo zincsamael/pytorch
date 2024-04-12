@@ -21,20 +21,17 @@ cp -r "$CONDA_PARENT_DIR/Miniconda3/Lib/site-packages/torch" "$LINUX_TMP_DIR_WIN
 
 pushd .
 
-get_envs_from_vcvarsall() {
-  if [[ -z "$VC_VERSION" ]]; then
-    echo "call \"C:/Program Files (x86)/Microsoft Visual Studio/$VC_YEAR/$VC_PRODUCT/VC/Auxiliary/Build/vcvarsall.bat\" x64 && bash -c export > env.sh" > temp.bat
-  else
-    echo "call \"C:/Program Files (x86)/Microsoft Visual Studio/$VC_YEAR/$VC_PRODUCT/VC/Auxiliary/Build/vcvarsall.bat\" -vcvars_ver=$VC_VERSION && bash -c export > env.sh" > temp.bat
-  fi
-  chmod +x temp.bat
-  ./temp.bat
-  cat env.sh
-  source env.sh
-  rm temp.bat
-  rm env.sh
-}
-get_envs_from_vcvarsall
+if [[ -z "$VC_VERSION" ]]; then
+  echo "call \"C:/Program Files (x86)/Microsoft Visual Studio/$VC_YEAR/$VC_PRODUCT/VC/Auxiliary/Build/vcvarsall.bat\" x64 && bash -c export > env.sh" > temp.bat
+else
+  echo "call \"C:/Program Files (x86)/Microsoft Visual Studio/$VC_YEAR/$VC_PRODUCT/VC/Auxiliary/Build/vcvarsall.bat\" -vcvars_ver=$VC_VERSION && bash -c export > env.sh" > temp.bat
+fi
+chmod +x temp.bat
+./temp.bat
+cat env.sh
+source env.sh
+rm temp.bat
+rm env.sh
 
 popd
 
