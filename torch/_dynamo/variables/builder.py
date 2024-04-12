@@ -2003,7 +2003,9 @@ def wrap_to_fake_tensor_and_record(
             values = fake_e._values() if fake_e.is_sparse else fake_e.values()
             tx.output.input_source_to_sizes_strides[source] = {
                 "size": fake_e.size(),
-                "stride": (),
+                # TODO: revise this, but for now this stride instead of ()
+                #       avoids SegFault with PYTORCH_TEST_WITH_DYNAMO=1
+                "stride": ( 1,) * fake_e.ndim,
                 "values_size": values.size(),
                 "values_stride": values.stride(),
             }
