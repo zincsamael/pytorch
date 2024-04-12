@@ -634,7 +634,6 @@ def _export_non_strict(
             # For const outputs we just directly return this
             return ConstantArgument(value=node)
 
-
         assert (
             "val" in node.meta
         ), f"{node} is not a constant or a node with a 'val' metadata field"
