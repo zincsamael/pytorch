@@ -13,6 +13,7 @@ from torch._dynamo.testing import rand_strided, same
 from torch._dynamo.utils import counters
 from torch._inductor import config
 from torch._inductor.exc import CppWrapperCodeGenError
+from torch._inductor.freezing import constant_fold
 from torch._inductor.test_case import TestCase
 from torch._inductor.utils import cache_dir
 
@@ -24,6 +25,8 @@ from torch.testing._internal.common_quantization import (
     skip_if_no_torchvision,
     skipIfNoFBGEMM,
 )
+from torch._export import capture_pre_autograd_graph
+
 from torch.testing._internal.common_utils import (
     DeterministicGuard,
     IS_CI,
@@ -221,6 +224,33 @@ class AOTInductorTestsTemplate:
         example_inputs = (torch.randn(4, 4, device=self.device),)
         with config.patch({"aot_inductor.use_runtime_constant_folding": True}):
             self.check_model(Model(self.device), example_inputs)
+
+    def test_constant_folding_with_buffer_mutation(self):
+        class MutableStateModule(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.register_buffer("my_state", torch.zeros(1))
+
+            def forward(self, x):
+                y = x + self.state
+                self.state.add_(1)
+                return y
+
+        m = capture_pre_autograd_graph(MutableStateModule(), (torch.zeros(1),))
+
+        get_attr_node_users = {}
+        for node in m.graph.nodes:
+            if node.op == "get_attr":
+                if node.target in get_attr_node_users:
+                    get_attr_node_users[node.target].extend(node.users.keys())
+                else:
+                    get_attr_node_users[node.target] = list(node.users.keys())
+
+        self.assertGreater(len(get_attr_node_users["state"]), 1) # The buffer in test case have at least 2 users
+        constant_fold(m)
+        get_attr_nodes = [node for node in m.graph.nodes if node.op == "get_attr"]
+        self.assertGreater(len(get_attr_nodes), 2) # The buffer is not folded
+
 
     @skipIfRocm
     @requires_cuda
