@@ -4467,7 +4467,7 @@ class TestSparseMeta(TestCase):
             m = t.to(device='meta')
             r = torch.add(m, m)
             self.assertEqual(r, m)
-            
+
 
 class _SparseDataset(torch.utils.data.Dataset):
     # An utility class used in TestSparseAny.test_dataloader method.
