@@ -84,14 +84,12 @@ else:
                     mesh_1d,
                     mesh_dim_names=(mesh_dim_name,),
                     _init_backend=False,
+                    _parent_mesh=device_mesh,
                 )
                 if cur_rank in mesh_1d:
                     res_sub_mesh = sub_mesh
 
             res_sub_mesh._dim_group_infos = [device_mesh._dim_group_infos[mesh_dim]]  # type: ignore[possibly-undefined]
-            # Update the hash of the submesh to take the parent mesh into consideration
-            # so the same mesh with or without the parent mesh is considered different.
-            res_sub_mesh._hash = hash((res_sub_mesh._hash, device_mesh._hash))
             # Assign the current DeviceMesh as the parent of the child DeviceMesh.
             # We need to update the mappings after the child mesh hash update.
             self.child_to_parent_mapping[res_sub_mesh] = device_mesh
@@ -204,6 +202,7 @@ else:
             *,
             mesh_dim_names: Optional[Tuple[str, ...]] = None,
             _init_backend: bool = True,
+            _parent_mesh: Optional["DeviceMesh"] = None,
         ) -> None:
             self.device_type = device_type
             if isinstance(mesh, torch.Tensor) and mesh.device.type != "cpu":
@@ -214,6 +213,8 @@ else:
                 else torch.tensor(mesh, dtype=torch.int)
             )
             self.mesh_dim_names = tuple(mesh_dim_names) if mesh_dim_names else None
+            self._parent_mesh = _parent_mesh
+            self._thread_id = threading.get_ident()
 
             # private field to pre-generate DeviceMesh's hash
             self._flatten_mesh_list = tuple(self.mesh.flatten().tolist())
@@ -223,6 +224,8 @@ else:
                     self.mesh.shape,
                     self.device_type,
                     self.mesh_dim_names,
+                    self._parent_mesh,
+                    self._thread_id,
                 )
             )
 
@@ -350,7 +353,17 @@ else:
         def __eq__(self, other: object) -> bool:
             if not isinstance(other, DeviceMesh):
                 return False
-            return self._hash == other._hash
+            if id(self) == id(other):
+                return True
+            else:
+                return (
+                    self._flatten_mesh_list == other._flatten_mesh_list
+                    and self.mesh.shape == other.mesh.shape
+                    and self.device_type == other.device_type
+                    and self.mesh_dim_names == other.mesh_dim_names
+                    and self._parent_mesh == other._parent_mesh
+                    and self._thread_id == other._thread_id
+                )
 
         def __getitem__(self, mesh_dim_name: str) -> "DeviceMesh":
             """
