@@ -135,6 +135,17 @@ i64 = torch.int64
 i32 = torch.int32
 
 
+class expectedFailureCodegenDynamicIfCUDAAndNotSM80OrLater:
+    def __init__(self, test_instance):
+        self.test_instance = test_instance
+
+    def __call__(self, fn):
+        self.test_instance._expected_failure_codegen_dynamic = (
+            fn.device == "cuda" and not SM80OrLater
+        )
+        return fn
+
+
 def _large_cumprod_input(shape, dim, dtype, device):
     # Construct a cumprod input which guaruntees not to overflow or underflow
     if is_integer_dtype(dtype):
@@ -2420,6 +2431,7 @@ class CommonTemplate:
             check_lowp=False,
         )
 
+    @expectedFailureCodegenDynamicIfCUDAAndNotSM80OrLater
     @config.patch(force_mixed_mm=True)
     def test_mixed_mm(self):
         def fn(a, b):
