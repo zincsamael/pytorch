@@ -361,7 +361,7 @@ void AOTIPythonKernelHolder::init_aoti_kernel_cache() {
       // Access the fields of each meta_info dict
       auto is_dynamic = meta_info_dict["is_dynamic"].cast<bool>();
       auto device_type = meta_info_dict["device_type"].cast<std::string>();
-      auto device_index = meta_info_dict["device_index"].cast<std::string>();
+      auto device_index = meta_info_dict["device_index"].cast<int8_t>();
       auto dtype = meta_info_dict["dtype"].cast<std::string>();
       auto sizes = meta_info_dict["sizes"].cast<std::vector<int64_t>>();
       auto strides = meta_info_dict["strides"].cast<std::vector<int64_t>>();
@@ -391,7 +391,7 @@ void AOTIPythonKernelHolder::init_aoti_kernel_cache() {
           nullptr,
           uint64_t(c10::DispatchKeySet(dispatch_key_).raw_repr()),
           parse_dtype(dtype),
-          c10::DeviceIndex(0),
+          c10::DeviceIndex(device_index),
           sym_optional_sizes,
           sym_optional_strides);
     }

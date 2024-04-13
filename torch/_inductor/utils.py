@@ -1519,13 +1519,18 @@ def device_need_guard(device: str):
 
 @functools.lru_cache(None)
 def aoti_eager_cache_dir():
-    return Path.home() / ".cache" / "torch" / "aoti_eager"
+    cache_dir = os.environ.get("TORCHINDUCTOR_AOTI_EAGER_CACHE_DIR")
+    if cache_dir is None:
+        return Path.home() / ".cache" / "torch" / "aoti_eager"
+    else:
+        return Path(cache_dir)
 
 
 def load_aoti_eager_cache(
     ns: str, op_func_name: str, op_overload_name: str, device_type: str
 ):
     device_kernel_cache = aoti_eager_cache_dir() / ns.lower() / device_type.lower()
+    op_overload_name = op_overload_name if op_overload_name else "default"
     op_conf = device_kernel_cache / f"{op_func_name}.{op_overload_name}.json"
     if not op_conf.exists():
         return None
