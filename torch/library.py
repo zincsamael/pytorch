@@ -123,6 +123,47 @@ class Library:
         _defs.add(qualname)
         return result
 
+    def _impl_with_aoti_compile(self, op_name, op_overload_name, dispatch_key='', fallback_fn=None):
+        r'''Registers the AOT-compiled implementation for the operator defined in the library.
+
+        Args:
+            op_name: operator name
+            op_overload_name: operator overload name
+            dispatch_key: dispatch key that the input function should be registered for. By default, it uses
+                          the dispatch key that the library was created with.
+            fallback_fn: A user-defined function that serves as a fallback if the AOT inductor fails to produce a kernel.
+                         This ensures that the operation can still be executed.
+
+        Example::
+            >>> my_lib = Library("aten", "IMPL")
+            >>> def div_cpu(self, other):
+            >>>     return self * (1 / other)
+            >>> my_lib._impl_with_aoti_compile("div", "Tensor", div_cpu, "CPU")
+        '''
+        impl_fn_name = "impl_with_aoti_compile"
+
+        assert isinstance(op_name, str)
+        assert self.m is not None
+        assert hasattr(self.m, impl_fn_name)
+        impl_fn = getattr(self.m, impl_fn_name)
+        assert callable(impl_fn)
+        op_name_with_overload = op_name.split("::")[-1]
+        if op_overload_name:
+            op_name_with_overload = op_name_with_overload + "." + op_overload_name
+
+        key = self.ns + "/" + op_name_with_overload + "/" + dispatch_key
+        if key in _impls:
+            # TODO: in future, add more info about where the existing function is registered (this info is
+            # today already returned by the C++ warning when impl is called but we error out before that)
+            raise RuntimeError("This is not allowed since there's already a kernel registered from python overriding {}"
+                               "'s behavior for {} dispatch key and {} namespace.".
+                               format(op_name_with_overload, dispatch_key, self.ns))
+
+        impl_fn(self.ns, op_name, op_overload_name, dispatch_key, fallback_fn)
+
+        _impls.add(key)
+        self._op_impls.add(key)
+
     def impl(self, op_name, fn, dispatch_key=''):
         r'''Registers the function implementation for an operator defined in the library.
 
