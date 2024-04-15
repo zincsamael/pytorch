@@ -4080,8 +4080,8 @@
   structured_delegate: mm.out
   variants: function, method
   dispatch:
-    SparseCPU, SparseCUDA, SparseMeta: _sparse_mm
-    SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: _sparse_csr_mm
+    SparseCPU, SparseCUDA: _sparse_mm
+    SparseCsrCPU, SparseCsrCUDA: _sparse_csr_mm
   tags: core
 
 - func: mm.out(Tensor self, Tensor mat2, *, Tensor(a!) out) -> Tensor(a!)
@@ -4090,8 +4090,8 @@
     CPU: mm_out_cpu
     CUDA: mm_out_cuda
     MPS: mm_out_mps
-    SparseCPU, SparseCUDA, SparseMeta: _sparse_mm_out
-    SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: _sparse_csr_mm_out
+    SparseCPU, SparseCUDA: _sparse_mm_out
+    SparseCsrCPU, SparseCsrCUDA: _sparse_csr_mm_out
 
 - func: _int_mm(Tensor self, Tensor mat2) -> Tensor
   dispatch:
