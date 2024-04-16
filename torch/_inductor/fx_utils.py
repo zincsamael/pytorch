@@ -6,7 +6,7 @@ import sympy
 
 import torch
 import torch.fx
-from torch.fx.experimental.symbolic_shapes import statically_known_true, sym_eq, free_unbacked_symbols
+from torch.fx.experimental.symbolic_shapes import statically_known_true, sym_eq
 from torch.utils import _pytree as pytree
 from torch.utils._pytree import tree_map
 from .virtualized import V
@@ -162,7 +162,16 @@ class FakeTensorUpdater:
             ):
                 continue
 
-            scalar_types = (torch.SymInt, torch.SymFloat, torch.SymBool, int, float, bool)
+            scalar_types = (
+                torch.SymInt,
+                torch.SymFloat,
+                torch.SymBool,
+                int,
+                float,
+                bool,
+            )
+
+            from torch.fx.experimental.symbolic_shapes import rename_unbacked_to
 
             def check_consistent(new, old):
                 if isinstance(new, torch.Tensor):
@@ -173,10 +182,10 @@ class FakeTensorUpdater:
                     # gives us a compound expression and I'm not sure it
                     # simplifies right now)
                     for i, j in zip(old.shape, new.shape):
-                        torch._check(i == j)
+                        rename_unbacked_to(i, j)
                 elif isinstance(new, scalar_types):
                     assert isinstance(old, scalar_types)
-                    torch._check(old == new)
+                    rename_unbacked_to(old, new)
 
             node.meta["val"] = new_fake_tensor
             if new_fake_tensor is not None:

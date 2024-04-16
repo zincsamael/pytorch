@@ -31,6 +31,7 @@ class FakeTensorProp(torch.fx.Interpreter):
         self.check_consistency = check_consistency
 
     def run_node(self, n: Node):
+        from torch.fx.experimental.symbolic_shapes import rename_unbacked_to
 
         result = super().run_node(n)
 
@@ -60,7 +61,6 @@ class FakeTensorProp(torch.fx.Interpreter):
         meta = tree_map(check_consistent_and_snapshot, result, *meta_arg)
         if meta is not None:
             n.meta['val'] = meta
-
         return result
 
     def propagate(self, *args):

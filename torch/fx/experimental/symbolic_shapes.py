@@ -265,11 +265,11 @@ def check_consistent(new, old) -> None:
         # gives us a compound expression and I'm not sure it
         # simplifies right now)
         for i, j in zip(old.shape, new.shape):
-            torch._check(i == j, lambda: f"{old.shape} != {new.shape} (old != new)")
+            rename_unbacked_to(i, j)
     # NB: bool is subclass of int
     elif isinstance(new, scalar_types) and not isinstance(new, bool):
         assert isinstance(old, scalar_types) and not isinstance(old, bool), f"{old} != {new}"
-        torch._check(old == new, lambda: f"{old} != {new} (old != new)")
+        rename_unbacked_to(old, new)
 
 def canonicalize_bool_expr(expr: SympyBoolean) -> SympyBoolean:
     r""" Canonicalize a boolean expression by transforming it into a lt / le
@@ -672,6 +672,9 @@ def constrain_unify(a, b):
     # TODO: this does not install a deferred runtime assert yet
 
     # TODO: Maybe dedupe this with _maybe_guard_rel?
+    # Update Feb 2024: this is extra important to do, this doesn't handle
+    # unbacked replacements properly nor does it generate deferred runtime
+    # asserts
     if not isinstance(a, SymInt):
         if not isinstance(b, SymInt):
             assert a == b
@@ -734,6 +737,31 @@ def expect_true(a, skip: int = 0):
         return a.node.expect_true(frame.f_code.co_filename, frame.f_lineno)
     assert type(a) is bool, a
     return a
+
+def rename_unbacked_to(orig, new):
+    """
+    Rename an unbacked SymInt into a new one.
+
+    The goal here is that you have two unbacked symbols, but actually they are
+    the same (you allocated the second one without knowing that it was going
+    to be the first one, e.g., due to retracing), and importantly, we don't
+    want to setup a deferred runtime assert because the old unbacked symbol is
+    *literally* vanishing from the graph and we better not try to compute any
+    asserts on it because we won't know how to generate a reference to it in
+    Inductor.  This is all very delicate, TODO find a better way.
+    """
+    # orig is eliminated, new is preserved
+    if isinstance(orig, torch.SymInt):
+        shape_env = orig.node.shape_env
+        if isinstance(new, torch.SymInt):
+            assert shape_env is new.node.shape_env
+    elif isinstance(new, torch.SymInt):
+        shape_env = new.node.shape_env
+    else:
+        torch._check(orig == new)
+        return
+
+    shape_env._rename_unbacked_to(orig, new)
 
 def guard_bool(a):
     if isinstance(a, SymBool):
@@ -2032,6 +2060,9 @@ class ShapeEnv:
         # Maps from sympy ints to expressions representing them
         # Populated from equality guards (i.e. a.shape[0] == b.shape[0])
         self.replacements: Dict[sympy.Symbol, sympy.Expr] = {}
+        # Eliminated unbacked symbols always get substituted, even when
+        # resolved_unbacked is False
+        self.eliminated_unbacked: Set[sympy.Symbol] = set()
         # Set holds a % b expressions that evaluate to 0.
         self.divisible: Set[sympy.Expr] = set()
         # Set that holds "size-like" symbols.  When we perform
@@ -2234,6 +2265,21 @@ class ShapeEnv:
             self.is_recording = False
 
     @record_shapeenv_event()
+    def _rename_unbacked_to(self, orig: SymInt, new: SymInt):
+        if (
+            not isinstance(orig.node.expr, sympy.Symbol) or
+            not isinstance(new.node.expr, sympy.Symbol) or
+            orig.node.expr == new.node.expr or
+            not self.is_unbacked_symint(orig.node.expr) or
+            not self.is_unbacked_symint(new.node.expr)
+        ):
+            torch._check(orig == new)
+            return
+        orig_s = orig.node.expr
+        self._set_replacement(orig_s, new.node.expr, "rename_unbacked_to")
+        self.eliminated_unbacked.add(orig_s)
+
+    @record_shapeenv_event()
     def freeze(self):
         """Freeze this ShapeEnv to stop accumulating guards
 
@@ -2359,7 +2405,7 @@ class ShapeEnv:
         Defines the current "state" of the guards we've accumulated in this ShapeEnv.
         Determines when we need to invalidate our cache
         """
-        return (len(self.replacements), len(self.divisible), self.num_deferred_runtime_asserts)
+        return (len(self.replacements), len(self.eliminated_unbacked), len(self.divisible), self.num_deferred_runtime_asserts)
 
     def _update_version_counter(self):
         # The shape environment is queried orders of magnitude more often than
@@ -3643,7 +3689,9 @@ class ShapeEnv:
                     subst[canonicalize_bool_expr(sympy.Not(dual))] = sympy.false
 
             for e in itertools.chain(self.guards, self.deferred_runtime_asserts.get(s, ())):
-                e = e.expr
+                # We need to make sure we apply replacements that were
+                # previously impeded by resolve_unbacked=False
+                e = self.simplify(e.expr)
                 if compute_hint:
                     e = canonicalize_bool_expr(e.xreplace(self.var_to_val))
                 add_expr(e)
@@ -3730,10 +3778,19 @@ class ShapeEnv:
         return new_expr if unbacked_only else None
 
     @_lru_cache
-    def replace(self, expr: "sympy.Expr") -> "sympy.Expr":
+    def replace(self, expr: "sympy.Expr", *, resolve_unbacked=True) -> "sympy.Expr":
         """Apply symbol replacements to any symbols in the given expression
         """
-        replacements = {s: self._find(cast(sympy.Symbol, s)) for s in expr.free_symbols}
+        # When resolve_unbacked is False, do not put unbacked SymInts in the
+        # replacement dict because we want to keep them preserved
+        replacements = {
+            s: self._find(cast(sympy.Symbol, s))
+            for s in expr.free_symbols
+            if resolve_unbacked or
+            not self.is_unbacked_symint(s) or
+            s in self.eliminated_unbacked
+        }
+        # NB: do NOT apply unbacked replacements here yet
         return safe_expand(expr.xreplace(replacements))
 
     @_lru_cache
@@ -3748,10 +3805,10 @@ class ShapeEnv:
         self._update_version_counter()
 
     @_lru_cache
-    def simplify(self, expr: "sympy.Expr") -> "sympy.Expr":
+    def simplify(self, expr: "sympy.Expr", resolve_unbacked=True) -> "sympy.Expr":
         """Use known constraints and replacements to simplify the given expr
         """
-        expr = self.replace(expr)
+        expr = self.replace(expr, resolve_unbacked=resolve_unbacked)
         # TODO it would seem that this pass is not necessary given the
         # below replacement of // with /, but for nested FloorDivs
         # the non-recursive replacement doesn't work, and
@@ -3916,7 +3973,7 @@ class ShapeEnv:
                 r = try_solve(sympy.Eq(a, tgt), b, floordiv_inequality=False)
                 if r is not None:
                     b_bound = self.bound_sympy(r[1])
-                    self.var_to_range[b] = b_bound & self.var_to_range[b]
+                    self._update_var_to_range(b, b_bound)
                     tgt_bound = self.bound_sympy(tgt)
                     assert issubset(tgt_bound, src_bound)
 
@@ -4141,7 +4198,10 @@ class ShapeEnv:
             eq_expr = sympy.Eq(mod_expr, 0)
             # add necessary mod guards
             self.evaluate_expr(eq_expr)
-        return self.simplify(expr)
+        # This is called when we do a floordiv in SymNode to avoid expression
+        # blow up, but be sure not to eliminate unbacked SymInts in case this
+        # expression is for a deferred runtime assert
+        return self.simplify(expr, resolve_unbacked=False)
 
     # We're about to add a guard/runtime assert, check if the ShapeEnv is frozen
     # and if so issue a warning
