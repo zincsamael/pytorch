@@ -45,3 +45,4 @@ torch.fx.experimental.symbolic_shapes
     lru_cache
     check_consistent
     compute_unbacked_bindings
+    rebind_unbacked
