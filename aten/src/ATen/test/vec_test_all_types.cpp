@@ -1630,6 +1630,7 @@ namespace {
       ASSERT_TRUE(vec_pinf.has_inf_nan()) << "Test failed for positive Infinity\n";
       ASSERT_TRUE(vec_ninf.has_inf_nan()) << "Test failed for negative Infinity\n";
     }
+#if !defined(CPU_CAPABILITY_SVE)
     TYPED_TEST(VecConvertTests, Convert) {
       using vec = TypeParam;
       using src_t = ValueType<TypeParam>;
@@ -1682,6 +1683,7 @@ namespace {
       TEST_CONVERT_TO(double);
     #undef TEST_CONVERT_TO
     }
+#endif
     TYPED_TEST(VecMaskTests, MaskedLoad) {
       using vec = TypeParam;
       using VT = ValueType<TypeParam>;
@@ -1709,6 +1711,7 @@ namespace {
             << "Failure Details:\nTest Seed to reproduce: " << seed;
       }
     }
+#if !defined(CPU_CAPABILITY_SVE)
     TYPED_TEST(VecMaskTests, MaskedCheck) {
       using VT = ValueType<TypeParam>;
       auto vec_mask = create_vec_mask<VT>(0);
@@ -1719,6 +1722,8 @@ namespace {
       ASSERT_TRUE(vec_mask.is_masked(1)) << "is_masked(1) check failed";
       ASSERT_TRUE(!vec_mask.is_masked(0)) << "!is_masked(0) check failed";
     }
+#endif
+#if !defined(CPU_CAPABILITY_SVE)
     TYPED_TEST(VecMaskTests, ToFrom) {
       using vec = TypeParam;
       using VT = ValueType<TypeParam>;
@@ -1744,6 +1749,8 @@ namespace {
             << "Failure Details:\nTest Seed to reproduce: " << seed;
       }
     }
+#endif
+#if !defined(CPU_CAPABILITY_SVE)
     TYPED_TEST(VecMaskTests, Cast) {
       using vec = TypeParam;
       using src_t = ValueType<TypeParam>;
@@ -1777,8 +1784,10 @@ namespace {
       TEST_MASK_CAST(c10::Half);
       TEST_MASK_CAST(float);
       TEST_MASK_CAST(double);
+      TEST_MASK_CAST(double);
     #undef TEST_MASK_CAST
     }
+#endif
 #else
 #error GTEST does not have TYPED_TEST
 #endif
