@@ -61,10 +61,8 @@
 #include <c10/util/CallOnce.h>
 
 // AOTriton headers
-#include <aotriton/dtypes.h>
 #include <aotriton/flash.h>
 #include <aotriton/runtime.h>
-#include <aotriton/util.h>
 
 namespace pytorch_flash {
 
@@ -222,9 +220,11 @@ mha_fwd(const at::Tensor &q,         // batch_size x seqlen_q x num_heads x head
   hipError_t err; // TODO: Error handling
   using aotriton::v2::flash::attn_fwd;
   using sdp::aotriton_adapter::mk_aotensor;
+  aotriton::TensorView<4> empty_bias(0, {0}, {0}, aotriton::DType::kFloat16);
   err = attn_fwd(mk_aotensor(q_t, "q"),
                  mk_aotensor(k_t, "k"),
                  mk_aotensor(v_t, "v"),
+                 empty_bias,
                  softmax_scale,
                  mk_aotensor<2>(M, "M"),
                  mk_aotensor(output_t, "Out"),
@@ -418,9 +418,11 @@ mha_bwd(const at::Tensor &dout,  // batch_size x seqlen_q x num_heads, x head_si
   {
     using aotriton::v2::flash::attn_bwd;
     using sdp::aotriton_adapter::mk_aotensor;
+    aotriton::TensorView<4> empty_bias(0, {0}, {0}, aotriton::DType::kFloat16);
     err = attn_bwd(mk_aotensor(q_t, "q"),
                    mk_aotensor(k_t, "k"),
                    mk_aotensor(v_t, "v"),
+                   empty_bias,
                    softmax_scale,
                    mk_aotensor(out_t, "out"),
                    mk_aotensor(dout_t, "dout"),
