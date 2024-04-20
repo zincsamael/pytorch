@@ -168,6 +168,7 @@ def has_metadata_mutation(f_arg, arg, *, check_only_storage_mutation: bool):
         # call is necessary here. We could in theory fix this, but this will
         # hopefully never happen in user code, and is not needed for fsdp.
         if is_sparse_any(arg):
+            # TODO:add sparse tensors support to functionalization
             same_storages = False
         else:
             same_storages = StorageWeakRef(arg.untyped_storage()) == StorageWeakRef(
