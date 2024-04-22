@@ -1082,22 +1082,20 @@ if(BUILD_PYTHON)
 
   # These should fill in the rest of the variables, like versions, but resepct
   # the variables we set above
-  set(Python_ADDITIONAL_VERSIONS ${PYTHON_VERSION} 3.8)
-  find_package(PythonInterp 3.0)
-  find_package(PythonLibs 3.0)
+  find_package(Python3 COMPONENTS Interpreter Development)
 
-  if(NOT PYTHONLIBS_VERSION_STRING)
+  if(NOT Python3_Development_FOUND)
     message(FATAL_ERROR
       "Python development libraries could not be found.")
   endif()
 
-  if(${PYTHONLIBS_VERSION_STRING} VERSION_LESS 3)
+  if(${Python3_VERSION} VERSION_LESS 3)
     message(FATAL_ERROR
-      "Found Python libraries version ${PYTHONLIBS_VERSION_STRING}. Python 2 has reached end-of-life and is no longer supported by PyTorch.")
+      "Found Python libraries version ${Python3_VERSION}. Python 2 has reached end-of-life and is no longer supported by PyTorch.")
   endif()
-  if(${PYTHONLIBS_VERSION_STRING} VERSION_LESS 3.8)
+  if(${Python3_VERSION} VERSION_LESS 3.8)
     message(FATAL_ERROR
-      "Found Python libraries version ${PYTHONLIBS_VERSION_STRING}. Python < 3.8 is no longer supported by PyTorch.")
+      "Found Python libraries version ${Python3_VERSION}. Python < 3.8 is no longer supported by PyTorch.")
   endif()
 
   # When building pytorch, we pass this in directly from setup.py, and
@@ -1151,7 +1149,7 @@ endif()
 message(STATUS "pybind11 include dirs: " "${pybind11_INCLUDE_DIRS}")
 add_library(pybind::pybind11 INTERFACE IMPORTED)
 target_include_directories(pybind::pybind11 SYSTEM INTERFACE ${pybind11_INCLUDE_DIRS})
-target_link_libraries(pybind::pybind11 INTERFACE python::python)
+target_link_libraries(pybind::pybind11 INTERFACE Python3::Python)
 if(APPLE)
   target_link_options(pybind::pybind11 INTERFACE -undefined dynamic_lookup)
 endif()
