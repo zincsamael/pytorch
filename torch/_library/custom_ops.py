@@ -223,9 +223,10 @@ class CustomOpDef:
                     def backend_impl(*args, **kwargs):
                         # Checks the assumption that outputs cannot alias
                         # inputs or other outputs.
-                        storages = set()
-                        for tensor in iter_tensors(args, kwargs):
-                            storages.add(id(tensor.untyped_storage()))
+                        storages = {
+                            id(tensor.untyped_storage())
+                            for tensor in iter_tensors(args, kwargs)
+                        }
 
                         result = self._backend_fns[device_type](*args, **kwargs)
 
@@ -413,7 +414,10 @@ class CustomOpDef:
 
     def _register_to_dispatcher(self) -> None:
         lib = self._lib
-        lib.define(f"{self._name}{self._schema}")
+        lib.define(
+            f"{self._name}{self._schema}",
+            tags=[_C.Tag.pt2_compliant_tag, _C.Tag.needs_fixed_stride_order],
+        )
         self._opoverload = _library.utils.lookup_op(self._qualname)
 
         def fake_impl(*args, **kwargs):
