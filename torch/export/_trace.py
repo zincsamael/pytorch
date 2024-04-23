@@ -579,6 +579,7 @@ def _export_non_strict(
             # TODO: We should be checking for a different type, once we add a new type
             return TokenArgument(name=node.name)
         elif isinstance(val, FakeTensor) or is_sparse_any(val):
+            # TODO: do we really need to keep the is_sparse_any clause?
             return TensorArgument(name=node.name)
         elif isinstance(val, torch.SymInt):
             return SymIntArgument(name=node.name)

@@ -879,8 +879,7 @@ class MetaConverter:
 
                     # The lambda function below is similar to
                     # `t.to(device='meta')` except the latter
-                    # preserves nnz value. Note that we always
-                    # have `t._indices().dtype == torch.int64`.
+                    # preserves nnz value
                     r = callback(
                         lambda: torch.ops.aten._sparse_coo_tensor_with_dims(
                             t.sparse_dim,
