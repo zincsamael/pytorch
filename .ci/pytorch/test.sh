@@ -1269,6 +1269,7 @@ elif [[ "${BUILD_ENVIRONMENT}" == *rocm* && -n "$TESTS_TO_INCLUDE" ]]; then
   test_aten
 elif [[ "${BUILD_ENVIRONMENT}" == *xpu* ]]; then
   install_torchvision
+  export PYTORCH_ENABLE_XPU_FALLBACK=1
   test_python
   test_aten
   test_xpu_bin
