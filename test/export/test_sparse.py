@@ -50,17 +50,11 @@ def all_sparse_layouts(test_name="layout"):
 
 
 class IdNet(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
     def forward(self, x):
         return x
 
 
 class SumNet(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
     def forward(self, x):
         return x.sum()
 
@@ -72,6 +66,17 @@ class EltwiseNet(torch.nn.Module):
 
     def forward(self, x):
         return self.relu(2 * torch.abs(-x))
+
+
+class SparseActivationCOO(torch.nn.Module):
+    def forward(self, x):
+        return [xi.to_sparse() for xi in x]
+
+
+# TODO: ensure this case work too
+class SparseActivationCSR(torch.nn.Module):
+    def forward(self, x):
+        return [xi.to_sparse_csr() for xi in x]
 
 
 #
@@ -167,6 +172,25 @@ class TestSparseProp(TestCase):
                     self.assertEqual(meta, sparse_input.to("meta"))
                 else:
                     self.assertEqual(meta, None)
+
+    @unittest.skipIf(
+        sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
+    )
+    def test_activation_coo(self):
+        net = SparseActivationCOO()
+        x = [torch.randn(3, 3) for _ in range(3)]
+        # Build the traced graph.
+        prog = torch.export.export(net, args=(x,))
+        # Test args/to_sparse/output.
+        for i, node in enumerate(prog.graph.nodes):
+            meta = node.meta.get("val", None)
+            if i <= 2:
+                self.assertIsInstance(meta, FakeTensor)
+                self.assertEqual(meta.layout, torch.strided)
+            elif i <= 5:
+                self.assertEqual(meta, x[i - 3].to_sparse().to("meta"))
+            else:
+                self.assertEqual(meta, None)
 
 
 instantiate_parametrized_tests(TestSparseProp)
