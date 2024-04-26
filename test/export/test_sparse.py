@@ -88,6 +88,11 @@ class TestSparseProp(TestCase):
     def setUp(self):
         TestCase.setUp(self)
 
+    def assertSameMeta(self, x, y):
+        self.assertIsInstance(x, torch.Tensor)
+        self.assertEqual(x, y.to("meta"))
+        self.assertEqual(x.layout, y.layout)
+
     @unittest.skipIf(
         sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
     )
@@ -111,7 +116,7 @@ class TestSparseProp(TestCase):
             for i, node in enumerate(prog.graph.nodes):
                 meta = node.meta.get("val", None)
                 if i == 0:
-                    self.assertEqual(meta, sparse_input.to("meta"))
+                    self.assertSameMeta(meta, sparse_input)
                 else:
                     self.assertEqual(meta, None)
 
@@ -138,7 +143,7 @@ class TestSparseProp(TestCase):
             for i, node in enumerate(prog.graph.nodes):
                 meta = node.meta.get("val", None)
                 if i == 0:
-                    self.assertEqual(meta, sparse_input.to("meta"))
+                    self.assertSameMeta(meta, sparse_input)
                 elif i == 1:
                     self.assertIsInstance(meta, FakeTensor)
                     self.assertEqual(meta.layout, torch.strided)
@@ -169,7 +174,7 @@ class TestSparseProp(TestCase):
             for i, node in enumerate(prog.graph.nodes):
                 meta = node.meta.get("val", None)
                 if i <= 4:
-                    self.assertEqual(meta, sparse_input.to("meta"))
+                    self.assertSameMeta(meta, sparse_input)
                 else:
                     self.assertEqual(meta, None)
 
@@ -188,7 +193,7 @@ class TestSparseProp(TestCase):
                 self.assertIsInstance(meta, FakeTensor)
                 self.assertEqual(meta.layout, torch.strided)
             elif i <= 5:
-                self.assertEqual(meta, x[i - 3].to_sparse().to("meta"))
+                self.assertSameMeta(meta, x[i - 3].to_sparse())
             else:
                 self.assertEqual(meta, None)
 
