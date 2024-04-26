@@ -6,7 +6,7 @@ if(NOT __AOTRITON_INCLUDED)
   set(__AOTRITON_INSTALL_DIR "${PROJECT_SOURCE_DIR}/torch")
   ExternalProject_Add(aotriton_external
     GIT_REPOSITORY https://github.com/ROCm/aotriton.git
-    GIT_TAG 43e06430eec8d0d138a45c7ac849c82d4ce8354c
+    GIT_TAG c42a8fcfe848af50db670432f9725733d5d01281
     SOURCE_DIR ${__AOTRITON_SOURCE_DIR}
     BINARY_DIR ${__AOTRITON_BUILD_DIR}
     PREFIX ${__AOTRITON_INSTALL_DIR}
