@@ -592,7 +592,9 @@ SparseTensor& add_out_sparse_cpu(const SparseTensor& t, const SparseTensor& src,
 
   r.resize_as_(src);
 
-  if (src._values().is_contiguous() && t._values().is_contiguous()) {
+  if (r.is_meta()) {
+    return r;
+  } else if (src._values().is_contiguous() && t._values().is_contiguous()) {
     return add_out_sparse_contiguous(r, t, src, value, commonDtype);
   } else {
     return add_out_sparse_non_contiguous(r, t, src, value, commonDtype);
