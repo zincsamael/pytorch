@@ -6207,6 +6207,20 @@
     CompositeExplicitAutogradNonFunctional: _nested_get_values_copy
   autogen: _nested_get_values_copy.out
 
+- func: _nested_strided_to_jagged(Tensor(a) self, Tensor dummy) -> Tensor(a)
+  variants: function
+  device_check: NoCheck
+  dispatch:
+    NestedTensorCPU, NestedTensorCUDA: _nested_strided_to_jagged
+
+- func: _nested_strided_to_jagged_copy(Tensor self, Tensor dummy) -> Tensor
+  variants: function
+  device_check: NoCheck
+  tags: view_copy
+  dispatch:
+    CompositeExplicitAutogradNonFunctional: _nested_strided_to_jagged_copy
+  autogen: _nested_strided_to_jagged_copy.out
+
 - func: _nested_get_offsets(Tensor self) -> Tensor
   variants: function
   device_check: NoCheck
