@@ -204,7 +204,12 @@ class AOTInductorTestsTemplate:
         )
         expected_path = os.path.join(tempfile.mkdtemp(dir=cache_dir()), "model.so")
         actual_path = AOTIRunnerUtil.compile(
-            model, example_inputs, options={"aot_inductor.output_path": expected_path}
+            model,
+            example_inputs,
+            options={
+                "aot_inductor.output_path": expected_path,
+                "aot_inductor.package": False,
+            },
         )
         self.assertTrue(actual_path == expected_path)
 
@@ -2083,6 +2088,7 @@ class AOTInductorTestsTemplate:
             so_path = AOTIRunnerUtil.compile(
                 model=TestModule().to(device=self.device),
                 example_inputs=(torch.rand(3, 4, device=self.device),),
+                options={"aot_inductor.package": False},
             )
 
         runner = AOTIRunnerUtil.load_runner(self.device, so_path)
@@ -2393,7 +2399,12 @@ class AOTInductorTestsTemplate:
                 "aot_inductor.debug_compile": True,
             }
         ):
-            so_path = AOTIRunnerUtil.compile(m, inputs, dynamic_shapes=dynamic_shapes)
+            so_path = AOTIRunnerUtil.compile(
+                m,
+                inputs,
+                dynamic_shapes=dynamic_shapes,
+                options={"aot_inductor.package": False},
+            )
         with open(os.path.splitext(so_path)[0] + ".cpp") as cpp:
             src_code = cpp.read()
             FileCheck().check_count(
@@ -2416,7 +2427,7 @@ class AOTInductorTestsTemplate:
                 21,  # we have 9 symbolic strides for which we don't generate checks
                 exactly=True,
             ).run(src_code)
-        optimized = AOTIRunnerUtil.load(self.device, so_path)
+        optimized = AOTIRunnerUtil.load(self.device, so_path, package=False)
         actual = optimized(*inputs)
         expected = m(*inputs)
         torch.testing.assert_close(actual, expected)
