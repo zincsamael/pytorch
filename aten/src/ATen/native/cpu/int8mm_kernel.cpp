@@ -284,10 +284,10 @@ void int8pack_mm_kernel_(
     const Tensor& B,
     const Tensor& scales) {
 
-  const auto* A_data = A.data_ptr<T>();
-  const auto* B_data = B.data_ptr<int8_t>();
+  const auto* A_data = A.const_data_ptr<T>();
+  const auto* B_data = B.const_data_ptr<int8_t>();
   auto* C_data = C.data_ptr<T>();
-  const auto* S_data = scales.data_ptr<T>();
+  const auto* S_data = scales.const_data_ptr<T>();
 
   int M = A.size(0);
   int N = B.size(0);
@@ -345,9 +345,11 @@ void int8pack_mm_kernel(
     const Tensor& B,
     const Tensor& scales) {
   if (C.dtype() == kHalf) {
-     int8pack_mm_kernel_<Half>(C, A, B, scales);
+    int8pack_mm_kernel_<Half>(C, A, B, scales);
+  } else if (C.dtype() == kBFloat16) {
+    int8pack_mm_kernel_<BFloat16>(C, A, B, scales);
   } else {
-     int8pack_mm_kernel_<BFloat16>(C, A, B, scales);
+    int8pack_mm_kernel_<float>(C, A, B, scales);
   }
 }
 
