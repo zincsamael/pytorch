@@ -101,6 +101,10 @@ class TestSparseProp(TestCase):
         # comparing their values. In the case of sparse tensors, this means
         # that comparing indices and values attributes are skipped as well,
         # which is why we are doing that explicitly below.
+        #
+        # TODO: enable the following tests when we have a consistent story
+        #       for setting nnz=0/actual-nnz for all meta data situations
+        #
         if x.layout is torch.sparse_coo:
             # self.assertEqual(x._indices(), y._indices(), exact_layout=True)
             # self.assertEqual(x._values(), y._values(), exact_layout=True)
