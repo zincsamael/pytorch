@@ -591,7 +591,6 @@ SparseTensor& add_out_sparse_cpu(const SparseTensor& t, const SparseTensor& src,
   TORCH_CHECK(is_same_density(t, src), "add: expected 'self' and 'other' to have same density, but 'self' has ", t.sparse_dim(), " sparse dimensions while 'other' has ", src.sparse_dim(), " sparse dimensions");
 
   r.resize_as_(src);
-
   if (r.is_meta()) {
     return r;
   } else if (src._values().is_contiguous() && t._values().is_contiguous()) {
