@@ -255,73 +255,73 @@ Tensor _to_copy(
   // TODO: Use the dispatcher for this.
   // Currently there are unenumerated extensibility issues preventing this.
   if (self.layout() == kSparse) {
-      TORCH_CHECK(
-          memory_format == MemoryFormat::Preserve,
-          "to(options): COO only supports memory format Preserve, but got ", memory_format,
-          " instead.");
-      auto indices = self._indices();
-      const auto new_indices = at::native::to(
-          indices,
-          indices.scalar_type(),
-          c10::kStrided,
-          device,
-          pin_memory,
-          non_blocking,
-          true, // force copy since we are in _to_copy
-          memory_format);
-      const auto new_values = at::native::to(
-          self._values(),
-          dtype,
-          c10::kStrided,
-          device,
-          pin_memory,
-          non_blocking,
-          true, // force copy since we are in _to_copy
-          memory_format);
+    TORCH_CHECK(
+        memory_format == MemoryFormat::Preserve,
+        "to(options): COO only supports memory format Preserve, but got ", memory_format,
+        " instead.");
+    auto indices = self._indices();
+    const auto new_indices = at::native::to(
+        indices,
+        indices.scalar_type(),
+        c10::kStrided,
+        device,
+        pin_memory,
+        non_blocking,
+        true, // force copy since we are in _to_copy
+        memory_format);
+    const auto new_values = at::native::to(
+        self._values(),
+        dtype,
+        c10::kStrided,
+        device,
+        pin_memory,
+        non_blocking,
+        true, // force copy since we are in _to_copy
+        memory_format);
 
-      return at::_sparse_coo_tensor_unsafe(
-          new_indices,
-          new_values,
-          self.sizes(),
-          options, self.is_coalesced());
+    return at::_sparse_coo_tensor_unsafe(
+        new_indices,
+        new_values,
+        self.sizes(),
+        options, self.is_coalesced());
   } else if (at::sparse_csr::is_sparse_compressed(self)) {
-      TORCH_CHECK(
-          memory_format == MemoryFormat::Preserve,
-          "to(options): ", at::sparse_csr::layoutToString(self.layout()),
-          " only supports memory format Preserve, but got ", memory_format,
-          " instead.");
+    TORCH_CHECK(
+        memory_format == MemoryFormat::Preserve,
+        "to(options): ", at::sparse_csr::layoutToString(self.layout()),
+        " only supports memory format Preserve, but got ", memory_format,
+        " instead.");
 
-      auto [compressed_indices, plain_indices] = at::sparse_csr::getCompressedPlainIndices(self);
+    auto [compressed_indices, plain_indices] = at::sparse_csr::getCompressedPlainIndices(self);
 
-      const auto new_values = at::native::to(
-          self.values(),
-          dtype,
-          c10::kStrided,
-          device,
-          pin_memory,
-          non_blocking,
-          true, // force copy since we are in _to_copy
-          memory_format);
+    const auto new_values = at::native::to(
+        self.values(),
+        dtype,
+        c10::kStrided,
+        device,
+        pin_memory,
+        non_blocking,
+        true, // force copy since we are in _to_copy
+        memory_format);
 
-      const auto new_compressed_indices = at::native::to(
-          compressed_indices,
-          compressed_indices.scalar_type(),
-          c10::kStrided,
-          device,
-          pin_memory,
-          non_blocking,
-          true, // force copy since we are in _to_copy
-          memory_format);
+    const auto new_compressed_indices = at::native::to(
+        compressed_indices,
+        compressed_indices.scalar_type(),
+        c10::kStrided,
+        device,
+        pin_memory,
+        non_blocking,
+        true, // force copy since we are in _to_copy
+        memory_format);
 
-      const auto new_plain_indices = at::native::to(
-          plain_indices,
-          plain_indices.scalar_type(),
-          c10::kStrided,
-          device,
-          pin_memory,
-          non_blocking,
-          true, // force copy since we are in _to_copy
-          memory_format);
+    const auto new_plain_indices = at::native::to(
+        plain_indices,
+        plain_indices.scalar_type(),
+        c10::kStrided,
+        device,
+        pin_memory,
+        non_blocking,
+        true, // force copy since we are in _to_copy
+        memory_format);
 
     return at::_sparse_compressed_tensor_unsafe(
         new_compressed_indices,
