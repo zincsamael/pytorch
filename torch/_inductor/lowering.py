@@ -548,7 +548,7 @@ def _convert_element_type(x: TensorBox, dtype: torch.dtype):
     if dtype.is_complex or x.get_dtype().is_complex:
         if x.get_size():
             # Decompose since aa aten fallback is more friendly for c++ codegen.
-            # This decompostion doesn't work for empty tensor, which needs more investigation.
+            # This decomposition doesn't work for empty tensor, which needs more investigation.
             dst = empty_like(x, dtype=dtype)
             ir.InplaceCopyFallback.create(dst, x)
             return dst
@@ -6001,6 +6001,18 @@ try:
     def _wait_tensor(inp):
         ir._WaitKernel.create_wait(_c10d_functional.wait_tensor.default, inp)
         return inp
+
+    @register_lowering(torch.ops._dtensor.shard_dim_alltoall)
+    def _shard_dim_alltoall(inp, gather_dim, shard_dim, group_name):
+        return ir.TensorBox.create(
+            ir._CollectiveKernel.create_out_of_place(
+                torch.ops._dtensor.shard_dim_alltoall.default,
+                inp,
+                gather_dim,
+                shard_dim,
+                group_name,
+            )
+        )
 
 except ImportError:
     log.info(
