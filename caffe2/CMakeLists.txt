@@ -1257,6 +1257,8 @@ target_include_directories(torch_cpu PRIVATE
 target_include_directories(torch_cpu PRIVATE
   ${TORCH_ROOT}/third_party/kineto/libkineto/include)
 
+include_directories(${TORCH_ROOT}/third_party/nlohmann/single_include)
+
 if(USE_KINETO)
   target_include_directories(torch_cpu PRIVATE
     ${TORCH_ROOT}/third_party/kineto/libkineto/src)
@@ -1290,6 +1292,7 @@ if(BUILD_TEST)
     )
   else()
     add_subdirectory(${TORCH_ROOT}/test/cpp/jit ${CMAKE_BINARY_DIR}/test_jit)
+    add_subdirectory(${TORCH_ROOT}/test/inductor ${CMAKE_BINARY_DIR}/test_inductor)
     add_subdirectory(
       ${TORCH_ROOT}/test/cpp/tensorexpr
       ${CMAKE_BINARY_DIR}/test_tensorexpr
