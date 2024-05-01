@@ -39,7 +39,6 @@ from torch._guards import detect_fake_mode
 
 from torch._library.fake_class_registry import FakeScriptObject
 from torch._subclasses.fake_tensor import FakeTensor, FakeTensorMode
-from torch._subclasses.meta_utils import is_sparse_any
 from torch._utils_internal import log_export_usage
 from torch.export.exported_program import OutputKind
 from torch.fx._utils import first_call_function_nn_module_stack
@@ -557,8 +556,7 @@ def _export_non_strict(
         if i < len(graph_signature.input_tokens):
             # TODO: We should be checking for a different type, once we add a new type
             return TokenArgument(name=node.name)
-        elif isinstance(val, FakeTensor) or is_sparse_any(val):
-            # TODO: do we really need to keep the is_sparse_any clause?
+        elif isinstance(val, FakeTensor):
             return TensorArgument(name=node.name)
         elif isinstance(val, torch.SymInt):
             return SymIntArgument(name=node.name)
