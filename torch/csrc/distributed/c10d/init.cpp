@@ -21,6 +21,7 @@
 
 #ifdef USE_C10D_NCCL
 #include <torch/csrc/distributed/c10d/NCCLUtils.hpp>
+#include <torch/csrc/distributed/c10d/ProcessGroupCudaP2P.hpp>
 #include <torch/csrc/distributed/c10d/ProcessGroupNCCL.hpp>
 #include <torch/csrc/distributed/c10d/intra_node_comm.hpp>
 #endif
@@ -2444,14 +2445,7 @@ options :class:`~torch.distributed.ProcessGroupNCCL.Options`).
           py::arg("rank"),
           py::arg("world_size"),
           py::arg("buffer_size") = c10::nullopt)
-      .def("barrier", &IntraNodeComm::barrier, py::arg("ranks") = py::none())
-      .def("put", &IntraNodeComm::put, py::arg("input"), py::arg("offset") = 0)
-      .def(
-          "get",
-          &IntraNodeComm::get,
-          py::arg("rank"),
-          py::arg("tensor"),
-          py::arg("offset") = 0);
+      .def("barrier", &IntraNodeComm::barrier, py::arg("ranks") = py::none());
 
 #ifdef NCCL_HAS_COMM_CTA_CGA
   py::class_<ncclConfig_t>(
@@ -2526,6 +2520,51 @@ Example::
           &::c10d::ProcessGroupNCCL::Options::global_ranks_in_group)
       .def_readwrite(
           "group_name", &::c10d::ProcessGroupNCCL::Options::group_name);
+
+  auto processGroupCudaP2P =
+      intrusive_ptr_no_gil_destructor_class_<::c10d::ProcessGroupCudaP2P>(
+          module, "ProcessGroupCudaP2P", backend)
+          .def(py::init<
+               const c10::intrusive_ptr<::c10d::Store>&,
+               int,
+               int,
+               c10::intrusive_ptr<::c10d::ProcessGroupCudaP2P::Options>>())
+          .def("is_p2p_available", &::c10d::ProcessGroupCudaP2P::isP2PAvailable)
+          .def("stream", &::c10d::ProcessGroupCudaP2P::stream)
+          .def(
+              "intra_node_barrier",
+              &::c10d::ProcessGroupCudaP2P::intra_node_barrier,
+              py::arg("ranks") = py::none())
+          .def(
+              "get_p2p_buffer",
+              [](c10::intrusive_ptr<::c10d::ProcessGroupCudaP2P> self,
+                 size_t rank,
+                 const std::vector<int64_t>& sizes,
+                 py::object data_type_obj,
+                 int64_t storage_offset) {
+                auto scalar_type =
+                    reinterpret_cast<THPDtype*>(data_type_obj.ptr())
+                        ->scalar_type;
+                return self->get_p2p_buffer(
+                    rank, sizes, scalar_type, storage_offset);
+              },
+              py::arg("rank"),
+              py::arg("sizes"),
+              py::arg("dtype"),
+              py::arg("storage_offset") = 0)
+          .def(
+              "_shutdown",
+              [](const c10::intrusive_ptr<::c10d::ProcessGroupCudaP2P>& self) {
+                return self->shutdown();
+              });
+
+  intrusive_ptr_class_<::c10d::ProcessGroupCudaP2P::Options>(
+      processGroupCudaP2P, "Options", processGroupOptions)
+      .def(py::init<>())
+      .def_readwrite(
+          "nccl_options", &::c10d::ProcessGroupCudaP2P::Options::ncclOptions)
+      .def_readwrite(
+          "buffer_size", &::c10d::ProcessGroupCudaP2P::Options::bufferSize);
 
 #endif
 

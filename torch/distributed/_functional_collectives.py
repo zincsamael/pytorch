@@ -1012,6 +1012,7 @@ def _reduce_scatter_tensor_coalesced_native_meta(
         for inp in inputs
     ]
 
+
 def ppermute_meta(
     input: torch.Tensor,
     dst_ranks: List[int],
