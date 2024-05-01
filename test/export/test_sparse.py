@@ -89,10 +89,10 @@ class TestSparseProp(TestCase):
         TestCase.setUp(self)
 
     def assertEqualMeta(self, x, y):
-        self.assertIsInstance(x, torch.Tensor)
+        self.assertIsInstance(x, FakeTensor)
         self.assertIsInstance(y, torch.Tensor)
 
-        # Convert sparse input for comparison.
+        # Convert sparse input to meta for comparison.
         y = y.to("meta")
         self.assertEqual(x, y, exact_layout=True, exact_is_coalesced=True)
 
@@ -221,6 +221,7 @@ class TestSparseProp(TestCase):
             if i <= 2:
                 self.assertIsInstance(meta, FakeTensor)
                 self.assertEqual(meta.layout, torch.strided)
+                self.assertEqual(meta.dtype, x[i].dtype)
             elif i <= 5:
                 self.assertEqualMeta(meta, x[i - 3].to_sparse())
             else:
