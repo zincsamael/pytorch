@@ -137,6 +137,9 @@ def get_proxy_slot(obj, tracer, default=no_default, transform=lambda x: x):
     return transform(tracker[obj])
 
 def snapshot_fake(val):
+    # TODO: skip for sparse to avoid faketensor->tensor change?
+    if val.is_sparse:
+        return val
     return val.detach()
 
 def extract_val(val):
