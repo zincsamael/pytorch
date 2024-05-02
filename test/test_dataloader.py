@@ -1372,6 +1372,30 @@ except RuntimeError as e:
             del loader1_it
             del loader2_it
 
+    def test_no_shuffle_preserves_RNG_state(self):
+        seed_reset = torch.seed()
+
+        # Test the global seed
+        torch.manual_seed(seed_reset)
+        before = torch.randint(0, 200, (1,)).item()
+
+        torch.manual_seed(seed_reset)
+        data = torch.arange(100)
+        dl = DataLoader(data, batch_size=4, shuffle=False)
+        iter(dl)
+        after = torch.randint(0, 200, (1,)).item()
+
+        self.assertEqual(before, after)
+
+        # Test with a generator
+        generator = torch.Generator()
+        generator.manual_seed(seed_reset)
+        data = torch.arange(100)
+        dl = DataLoader(data, batch_size=4, shuffle=False, generator=generator)
+        iter(dl)
+
+        self.assertEqual(seed_reset, generator.initial_seed())
+
     def test_segfault(self):
         p = ErrorTrackingProcess(target=_test_segfault)
         p.start()
