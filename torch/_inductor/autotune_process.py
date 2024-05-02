@@ -513,7 +513,6 @@ class BenchmarkRequest:
             fn = self.make_run_fn(*input_tensors, output_tensor=output_tensor)
         except NonzeroWorkspaceNotSupportedError:
             # Skipping all ops with nonzero workspace requirements
-            log.info("Skipping op due to nonzero workspace requirement")
             return float("inf")
 
         if debug:
