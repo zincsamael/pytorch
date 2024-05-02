@@ -101,14 +101,9 @@ class TestSparseProp(TestCase):
         # comparing their values. In the case of sparse tensors, this means
         # that comparing indices and values attributes are skipped as well,
         # which is why we are doing that explicitly below.
-        #
-        # TODO: enable the following tests when we have a consistent story
-        #       for setting nnz=0/actual-nnz for all meta data situations
-        #
         if x.layout is torch.sparse_coo:
-            # self.assertEqual(x._indices(), y._indices(), exact_layout=True)
-            # self.assertEqual(x._values(), y._values(), exact_layout=True)
-            pass
+            self.assertEqual(x._indices(), y._indices(), exact_layout=True)
+            self.assertEqual(x._values(), y._values(), exact_layout=True)
         else:
             if x.layout in {torch.sparse_csr, torch.sparse_bsr}:
                 x_meta1, y_meta1 = (x.crow_indices(), y.crow_indices())
@@ -118,9 +113,9 @@ class TestSparseProp(TestCase):
                 x_meta2, y_meta2 = (x.row_indices(), y.row_indices())
             else:
                 self.assertFail()
-            # self.assertEqual(x_meta1, y_meta1, exact_layout=True)
-            # self.assertEqual(x_meta2, y_meta2, exact_layout=True)
-            # self.assertEqual(x.values(), y.values(), exact_layout=True)
+            self.assertEqual(x_meta1, y_meta1, exact_layout=True)
+            self.assertEqual(x_meta2, y_meta2, exact_layout=True)
+            self.assertEqual(x.values(), y.values(), exact_layout=True)
 
     @unittest.skipIf(
         sys.version_info >= (3, 12), "torch.compile is not supported on python 3.12+"
