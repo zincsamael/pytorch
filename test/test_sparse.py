@@ -1553,6 +1553,7 @@ class TestSparse(TestSparseBase):
     @coalescedonoff
     @precisionOverride({torch.bfloat16: 5e-2, torch.float16: 5e-2})
     @dtypes(torch.double, torch.cdouble, torch.bfloat16, torch.float16)
+    @skipIfTorchDynamo("nnz=0 issue")
     def test_sparse_addmm(self, device, dtype, coalesced):
         if (dtype is torch.bfloat16 or dtype is torch.float16) and device.startswith("cuda"):
             self.skipTest('addmm_sparse_cuda is not implemented for BFloat16 and Half')
@@ -4318,6 +4319,7 @@ class TestSparseMeta(TestCase):
 
     @all_sparse_layouts('layout', include_strided=False)
     @parametrize("dtype", [torch.float64])
+    @skipIfTorchDynamo("nnz=0 issue")
     def test_meta(self, dtype, layout):
         if layout is torch.sparse_coo:
             self._test_meta_sparse_coo(dtype)
