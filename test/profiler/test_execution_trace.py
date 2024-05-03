@@ -21,7 +21,6 @@ from typing import Any, Dict, List
 
 import torch
 import torch.nn as nn
-from torch import _dynamo as torchdynamo
 from torch.autograd import (
     _record_function_with_args_enter,
     _record_function_with_args_exit,
@@ -199,7 +198,6 @@ class TestExecutionTrace(TestCase):
         expected_loop_events = 0
 
         et = ExecutionTraceObserver().register_callback(fp.name)
-
         et.start()
         for idx in range(5):
             expected_loop_events += 1
@@ -233,48 +231,41 @@ class TestExecutionTrace(TestCase):
     )
     @unittest.skipIf(not TEST_CUDA or not has_triton(), "need CUDA and triton to run")
     def test_execution_trace_with_pt2(self):
-        @torchdynamo.optimize("inductor")
-        def fn(a, b, c):
-            x = torch.nn.functional.linear(a, b)
-            x = x + c
-            return x.cos()
+        class ConvAndRelu(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.linear = nn.Linear(4096, 4096)
+                self.relu = nn.ReLU(inplace=True)
 
-        a, b, c = (torch.randn(4, 4, requires_grad=True).to("cuda") for _ in range(3))
-
-        inputs = [a, b, c]
-        with torch._inductor.config.patch(compile_threads=1):
-            fn(*inputs)
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
+                x = self.linear(x)
+                x = self.relu(x)
+                return x
 
         # Create a temp file to save execution trace data.
         fp = tempfile.NamedTemporaryFile("w+t", suffix="_et.json", delete=False)
         fp.close()
 
-        with profile(
-            activities=torch.profiler.supported_activities(),
-            record_shapes=True,
-            schedule=torch.profiler.schedule(
-                skip_first=3, wait=1, warmup=1, active=2, repeat=1
-            ),
-            execution_trace_observer=(
-                ExecutionTraceObserver().register_callback(fp.name)
-            ),
-        ) as p:
-            for idx in range(10):
-                with record_function(f"## LOOP {idx} ##"):
-                    fn(*inputs)
-                p.step()
+        with torch._inductor.config.patch(compile_threads=1):
+            test_module = torch.compile(ConvAndRelu())
 
+            x = torch.rand(128, 4096)
+            et = ExecutionTraceObserver().register_callback(fp.name)
+            et.start()
+            test_module.forward(x)
+            et.stop()
+
+        assert fp.name == et.get_output_file_path()
+        et.unregister_callback()
         nodes = self.get_execution_trace_root(fp.name)
-        found_captured_triton_kernel_node = False
+
+        found_root_node = False
         for n in nodes:
             assert "name" in n
-            if "triton_" in n["name"]:
-                for attr in n["attrs"]:
-                    if attr["name"] == "kernel_file" and attr["value"] != "":
-                        found_captured_triton_kernel_node = True
-                        assert len(n["inputs"]["values"]) > 0
-                        assert len(n["outputs"]["values"]) == 0
-        assert found_captured_triton_kernel_node
+            if "[pytorch|profiler|execution_trace|process]" in n["name"]:
+                found_root_node = True
+
+        assert found_root_node
 
     def test_execution_trace_start_stop(self):
         use_cuda = torch.profiler.ProfilerActivity.CUDA in supported_activities()
@@ -282,7 +273,8 @@ class TestExecutionTrace(TestCase):
         fp = tempfile.NamedTemporaryFile("w+t", suffix=".et.json", delete=False)
         fp.close()
         expected_loop_events = 0
-        et = ExecutionTraceObserver().register_callback(fp.name)
+        et = ExecutionTraceObserver()
+        et.register_callback(fp.name)
         for idx in range(10):
             if idx == 3:
                 et.start()
@@ -322,7 +314,8 @@ class TestExecutionTrace(TestCase):
                 fp = tempfile.NamedTemporaryFile("w+t", suffix=".et.json", delete=False)
                 fp.close()
                 output_files.append(fp.name)
-                et = ExecutionTraceObserver().register_callback(fp.name)
+                et = ExecutionTraceObserver()
+                et.register_callback(fp.name)
                 et.start()
             with record_function(f"## LOOP {idx} ##"):
                 self.payload(use_cuda=use_cuda)
@@ -347,7 +340,8 @@ class TestExecutionTrace(TestCase):
     def test_execution_trace_no_capture(self):
         fp = tempfile.NamedTemporaryFile("w+t", suffix=".et.json", delete=False)
         fp.close()
-        et = ExecutionTraceObserver().register_callback(fp.name)
+        et = ExecutionTraceObserver()
+        et.register_callback(fp.name)
 
         assert fp.name == et.get_output_file_path()
         et.unregister_callback()
@@ -363,7 +357,8 @@ class TestExecutionTrace(TestCase):
         fp = tempfile.NamedTemporaryFile("w+t", suffix=".et.json", delete=False)
         fp.close()
 
-        observer = ExecutionTraceObserver().register_callback(fp.name)
+        et = ExecutionTraceObserver()
+        observer = et.register_callback(fp.name)
 
         def fn(nt):
             return nt.sin().cos()

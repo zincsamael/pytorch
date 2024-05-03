@@ -788,7 +788,14 @@ class Reduction(Loops):
             if split == 1:
                 # No need to split.
                 return ReductionHint.INNER, split
-            if input_node is not None and isinstance(input_node, TensorBox):
+            if (
+                len(ranges) == 0
+                and input_node is not None
+                and isinstance(input_node, TensorBox)
+            ):
+                # Only handles the case where keep_dim = False.
+                # Otherwise, we need to propagate reduction dim info to the stage where
+                # the intermediate loader of the first Reduction is generated.
                 new_ranges, new_reduction_ranges = extract_input_node_reduction_ranges(
                     input_node
                 )
@@ -1166,20 +1173,13 @@ class Reduction(Loops):
         new_reduction_ranges,
         default,
     ):
-        assert all(
-            r == 1 for r in original_ranges
-        ), f"Only enabled for numel_hint == 1, found {original_ranges=}"
+        assert len(original_ranges) == 0, f"{original_ranges}= is not equal to []"
         reindex = View.dynamic_reshape_indexer(
             original_reduction_ranges, tuple(new_ranges) + tuple(new_reduction_ranges)
         )
 
-        def wrapper_fn(merged_index, new_reduction_index):
-            original_idx = merged_index[: len(original_ranges)]
-            new_index = merged_index[len(original_ranges) :]
-            return loader(
-                original_idx,
-                reindex(tuple(new_index) + tuple(new_reduction_index)),
-            )
+        def wrapper_fn(index, reduction_index):
+            return loader([], reindex(tuple(index) + tuple(reduction_index)))
 
         return wrapper_fn
 
@@ -1318,7 +1318,7 @@ class Reduction(Loops):
             wrapper_fn,
             original_ranges,
             original_reduction_ranges,
-            [*original_ranges, *new_ranges],
+            new_ranges,
             new_reduction_ranges,
             reduction_type,
             -1,
@@ -1948,12 +1948,12 @@ class ExpandView(BaseView):
             elif old_size[i] is None or old_size[i] == 1:
                 pass
             else:
-                # NB: new_size[i] == old_size[i] is known because the meta
-                # formula was expected to have taught us this equality.
-                # We can't conveniently check it right now because
-                # statically_known_equals doesn't know to consult preexisting
-                # guards
-                pass
+                # Expect broadcast compatibility
+                new_size[i] = V.graph.sizevars.expect_equals(
+                    new_size[i],
+                    old_size[i],
+                    msg=f"Broadcast failed in ExpandView({x.get_size()}, {new_size}) on dimension {i}",
+                )
         return new_size
 
     @classmethod
@@ -3018,7 +3018,7 @@ class Buffer(IRNode):
         return self.layout.make_indexer()
 
     def get_name(self) -> str:
-        assert self.name, self
+        assert self.name
         return self.name
 
     def get_device(self):
@@ -5073,15 +5073,8 @@ class AssertScalar(ExternKernel):
         if V.graph.cpp_wrapper:
             pass
         else:
-            # NB: It is EXTREMELY important not to simplify the scalar under
-            # assertion here, because simplify is done with respect to
-            # runtime asserts.  So if you have "u0 == 0" in the runtime
-            # asserts, if you subsequently try to simplify(u0 == 0), you will
-            # get True (because we've already runtime assert'ed that it's
-            # true).  But we're code generating the actual runtime assert
-            # here!!
             wrapper.writeline(
-                f"if not {V.graph.wrapper_code.codegen_python_sizevar(self.scalar, simplify=False)}:"
+                f"if not {V.graph.wrapper_code.codegen_python_sizevar(self.scalar)}:"
             )
             wrapper.writeline(f"    raise RuntimeError({repr(self.msg)})")
             # No one should ever use this buffer, but for uniformity

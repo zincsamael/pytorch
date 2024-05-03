@@ -2,7 +2,8 @@ import logging
 
 import torch
 
-from .. import ir, lowering as L
+from .. import ir
+from ..lowering import register_lowering
 from ..select_algorithm import (
     autotune_select_algorithm,
     ExternKernelChoice,
@@ -96,14 +97,9 @@ aten_bmm = ExternKernelChoice(torch.bmm, "at::bmm_out")
 aten_baddbmm = ExternKernelChoice(torch.baddbmm, "at::baddbmm_out")
 
 
-@L.register_lowering(aten.bmm)
+@register_lowering(aten.bmm)
 def tuned_bmm(mat1, mat2, *, layout=None):
     if all(x.get_device().type == "cpu" for x in [mat1, mat2]):
-        # decompose to small ops when memory bound
-        if mat1.get_size()[1] == 1 or mat2.get_size()[2] == 1:
-            mat1 = L.unsqueeze(mat1, -1)
-            mat2 = L.unsqueeze(mat2, 1)
-            return L.sum_(L.mul(mat1, mat2), axis=2)
 
         def is_valid_to_require_contiguous(t):
             if not ir.is_storage_and_layout(t):
@@ -161,7 +157,7 @@ def tuned_bmm(mat1, mat2, *, layout=None):
 
 
 # Don't register this since it is slower than decomposing it
-# @L.register_lowering(aten.baddbmm)
+# @register_lowering(aten.baddbmm)
 def tuned_baddbmm(inp, mat1, mat2, *, alpha=1, beta=1, layout=None):
     m, n, k, layout, mat1, mat2, inp = mm_args(mat1, mat2, inp, layout=layout)
 

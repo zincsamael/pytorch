@@ -1409,19 +1409,8 @@ RecordQueue::getRecords(
   }
 
   if (python_tracer_) {
-    std::vector<std::shared_ptr<torch::profiler::impl::Result>> ev;
-    try {
-      ev = python_tracer_->getEvents(
-          converter, python_enters, static_cast<c10::time_t>(end_time_ns));
-    } catch (std::exception& e) {
-      // Normally addKinetoEvents() below will stop the trace - but if an
-      // exception happens here then the events will never be stopped and future
-      // runs will be broken - so make sure to stopTrace() if we see an
-      // exception.
-      torch::profiler::impl::kineto::stopTrace();
-      throw;
-    }
-    for (const auto& i : ev) {
+    for (const auto& i : python_tracer_->getEvents(
+             converter, python_enters, static_cast<c10::time_t>(end_time_ns))) {
       out.push_back(i);
     }
     python_tracer_.reset();

@@ -258,10 +258,9 @@ class CheckpointFunction(torch.autograd.Function):
     def backward(ctx, *args):
         if not torch.autograd._is_checkpoint_valid():
             raise RuntimeError(
-                "When use_reentrant=True, torch.utils.checkpoint is incompatible"
-                " with .grad() or passing an `inputs` parameter to .backward()."
-                " To resolve this error, you can either set use_reentrant=False,"
-                " or call .backward() without passing the `inputs` argument."
+                "Checkpointing is not compatible with .grad() or when an `inputs` parameter"
+                " is passed to .backward(). Please use .backward() and do not pass its `inputs`"
+                " argument."
             )
         # Copy the list to avoid modifying original list.
         inputs = list(ctx.inputs)

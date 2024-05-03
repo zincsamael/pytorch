@@ -584,16 +584,16 @@ class CUDAWarmupNode:
         }
 
         def get_non_cudagraph_inps():
-            non_cudagraph_inps = []
+            non_cudagraph_inps = set()
             for t in itertools.chain(new_inputs, self.wrapped_function.constants):
                 if (
                     isinstance(t, torch.Tensor)
                     and t.untyped_storage().data_ptr() not in existing_path_data_ptrs
                 ):
-                    non_cudagraph_inps.append(weakref.ref(t.untyped_storage()))
+                    non_cudagraph_inps.add(t.untyped_storage().data_ptr())
             return non_cudagraph_inps
 
-        non_cudagraph_inps_storages = get_non_cudagraph_inps()
+        non_cudagraph_inps = get_non_cudagraph_inps()
 
         if config.triton.slow_path_cudagraph_asserts and not self.already_warm:
             refs = list(self.path_live_weakrefs())
@@ -606,26 +606,15 @@ class CUDAWarmupNode:
         ), get_history_recording():
             out = self.wrapped_function.model(new_inputs)
 
-        # We need to know which outputs are allocated within the cudagraph pool
-        # so that we can deallocate them at the beginning of the next cudagraph step,
-        # and set their access to error.
-        # We use a weakref to the inputs storage, in case a block which was previously
-        # allocated to the general caching allocator pool gets reallocated to a private pool.
-
-        non_cudagraph_inps_storage_ptrs = set()
-        for storage in non_cudagraph_inps_storages:
-            s = storage()
-            if s is not None:
-                non_cudagraph_inps_storage_ptrs.add(s._cdata)
-
         assert len(new_inputs) == 0
 
         # sdpa returns cpu tensors when not recording cuda graph
         def add_ref(o):
             return (
-                isinstance(o, torch.Tensor)
+                o is not None
+                and isinstance(o, torch.Tensor)
                 and o.is_cuda
-                and o.untyped_storage()._cdata not in non_cudagraph_inps_storage_ptrs
+                and o.untyped_storage().data_ptr() not in non_cudagraph_inps
                 and o.untyped_storage().data_ptr() != 0
             )
 
@@ -637,8 +626,11 @@ class CUDAWarmupNode:
         )
 
         if config.triton.slow_path_cudagraph_asserts and not self.already_warm:
-            out_refs = list(self.path_live_weakrefs())
-            check_memory_pool(self.device_index, self.cuda_graphs_pool, out_refs)
+            out_refs = self.path_live_weakrefs()
+            new_storages = [
+                t for t in out_refs if t.data_ptr() not in non_cudagraph_inps
+            ]
+            check_memory_pool(self.device_index, self.cuda_graphs_pool, new_storages)
 
         return out
 
