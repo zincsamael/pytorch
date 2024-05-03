@@ -6,6 +6,7 @@ from typing import Any, cast, Dict, List, Optional, Tuple
 
 import torch
 
+import torch.distributed.distributed_c10d as c10d
 import torch.fx as fx
 import torch.library
 import torch.nn as nn
@@ -157,8 +158,9 @@ def _gen_partial_strategy(mesh: DeviceMesh) -> PlacementStrategy:
     # TODO: Only NCCL supports AVG so using backend like Gloo would
     # crash, we should figure out a way to support avg reduction
     # for non-NCCL backend
+    reduce_op = c10d.ReduceOp.AVG  # type: ignore[attr-defined]
     return PlacementStrategy(
-        output_specs=DTensorSpec(mesh=mesh, placements=(_Partial("avg"),)),
+        output_specs=DTensorSpec(mesh=mesh, placements=(_Partial(reduce_op),)),
     )
 
 

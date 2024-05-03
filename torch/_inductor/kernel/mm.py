@@ -305,12 +305,12 @@ def tuned_addmm(inp, mat1, mat2, *, alpha=1, beta=1, layout=None):
                 beta=beta,
             )
 
-    add_aten_fallback = False
-    if len(choices) == 0:
+    use_aten = use_aten_gemm_kernels()
+    if len(choices) == 0 and not use_aten:
         log.warning("No choices for GEMM, using ATen backend as fallback")
-        add_aten_fallback = True
+        use_aten = True
 
-    if add_aten_fallback:
+    if use_aten:
         choices.append(
             aten_addmm.bind(
                 (inp_expanded, mat1, mat2),

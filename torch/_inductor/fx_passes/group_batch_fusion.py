@@ -858,7 +858,7 @@ class BatchMulPostGradFusion(BatchPointwiseOpsPostGradFusion):
 class _OrderedSet:
     def __init__(self, param=None):
         if param:
-            self.rep = OrderedDict(dict.fromkeys(param))
+            self.rep = OrderedDict({k: None for k in param})
         else:
             self.rep = OrderedDict()
 

@@ -685,10 +685,6 @@ API Reference
 .. autofunction:: register_dataclass
 .. autofunction:: torch.export.dynamic_shapes.Dim
 .. autofunction:: dims
-.. autoclass:: torch.export.dynamic_shapes.ShapesCollection
-
-    .. automethod:: dynamic_shapes
-
 .. autoclass:: Constraint
 .. autoclass:: ExportedProgram
 
