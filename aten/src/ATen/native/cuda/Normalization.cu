@@ -484,11 +484,13 @@ std::tuple<Tensor, Tensor, Tensor> batch_norm_cuda(const Tensor& self, const c10
 
 std::tuple<Tensor, Tensor, Tensor, Tensor> _batch_norm_maybe_update_cuda_helper(
     const Tensor& input, const c10::optional<Tensor>& weight_opt, const c10::optional<Tensor>& bias_opt,
-    Tensor& running_mean, Tensor& running_var, double momentum, double eps, bool update) {
+    const c10::optional<Tensor>& running_mean_opt, const c10::optional<Tensor>& running_var_opt, double momentum, double eps, bool update) {
   // See [Note: hacky wrapper removal for optional tensor]
   c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
   const Tensor& weight = *weight_maybe_owned;
   const Tensor& bias = c10::value_or_else(bias_opt, [] {return Tensor();});
+  const Tensor& running_mean = c10::value_or_else(running_mean_opt, [] {return Tensor();});
+  const Tensor& running_var = c10::value_or_else(running_var_opt, [] {return Tensor();});
   Tensor output, save_mean, save_var, reserve;
 
   BatchNormBackend backend = _select_batch_norm_backend(input, weight, bias, running_mean, running_var, update, eps);
@@ -509,18 +511,20 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> _batch_norm_maybe_update_cuda_helper(
 
 std::tuple<Tensor, Tensor, Tensor, Tensor> _batch_norm_with_update_cuda(
     const Tensor& input, const c10::optional<Tensor>& weight_opt, const c10::optional<Tensor>& bias_opt,
-    Tensor& running_mean, Tensor& running_var, double momentum, double eps) {
+    const c10::optional<Tensor>& running_mean, const c10::optional<Tensor>& running_var, double momentum, double eps) {
   return _batch_norm_maybe_update_cuda_helper(input, weight_opt, bias_opt, running_mean, running_var, momentum, eps, /*update*/true);
 }
 
 std::tuple<Tensor&, Tensor&, Tensor&, Tensor&> _batch_norm_with_update_cuda_out(
     const Tensor& input, const c10::optional<Tensor>& weight_opt, const c10::optional<Tensor>& bias_opt,
-    Tensor& running_mean, Tensor& running_var, double momentum, double eps,
+    const c10::optional<Tensor>& running_mean_opt, const c10::optional<Tensor>& running_var_opt, double momentum, double eps,
     Tensor& out, Tensor& save_mean, Tensor& save_var, Tensor& reserve) {
   // See [Note: hacky wrapper removal for optional tensor]
   c10::MaybeOwned<Tensor> weight_maybe_owned = at::borrow_from_optional_tensor(weight_opt);
   const Tensor& weight = *weight_maybe_owned;
   const Tensor& bias = c10::value_or_else(bias_opt, [] {return Tensor();});
+  const Tensor& running_mean = c10::value_or_else(running_mean_opt, [] {return Tensor();});
+  const Tensor& running_var = c10::value_or_else(running_var_opt, [] {return Tensor();});
 
   BatchNormBackend backend = _select_batch_norm_backend(input, weight, bias, running_mean, running_var, /*training*/true, eps);
   if (backend == BatchNormBackend::Cudnn) {

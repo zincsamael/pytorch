@@ -686,15 +686,15 @@ Tensor batch_norm(
       auto bias_c = bias.contiguous();
       auto rmean_c = running_mean.defined() ? running_mean.contiguous() : running_mean;
       auto rvar_c = running_var.defined() ? running_var.contiguous() : running_var;
-      return std::get<0>(at::_batch_norm_with_update(input_c, weight_c, bias_c, const_cast<Tensor&>(rmean_c),
-                                                    const_cast<Tensor&>(rvar_c), momentum, eps));
+      return std::get<0>(at::_batch_norm_with_update(input_c, weight_c, bias_c, rmean_c,
+                                                     rvar_c, momentum, eps));
     } else {
-      return std::get<0>(at::_batch_norm_with_update(input, weight, bias, const_cast<Tensor&>(running_mean),
-                                                    const_cast<Tensor&>(running_var), momentum, eps));
+      return std::get<0>(at::_batch_norm_with_update(input, weight, bias, running_mean,
+                                                     running_var, momentum, eps));
     }
   } else {
     return std::get<0>(at::_batch_norm_no_update(input, weight, bias, running_mean, running_var,
-                                                momentum, eps));
+                                                 momentum, eps));
   }
 }
 
@@ -708,7 +708,7 @@ Tensor instance_norm(
   const Tensor& running_mean = c10::value_or_else(running_mean_opt, [] {return Tensor();});
   const Tensor& running_var = c10::value_or_else(running_var_opt, [] {return Tensor();});
 
- TORCH_CHECK(use_input_stats || (running_mean.defined() && running_var.defined()),
+  TORCH_CHECK(use_input_stats || (running_mean.defined() && running_var.defined()),
            "Expected running_mean and running_var to be defined when use_input_stats is false");
   std::vector<SymInt> shape = input.sym_sizes().vec();
   SymInt b = input.sym_size(0);
@@ -849,7 +849,7 @@ std::tuple<Tensor, Tensor, Tensor> batch_norm_cpu(const Tensor& self, const c10:
 
 std::tuple<Tensor, Tensor, Tensor, Tensor> _batch_norm_with_update_cpu(
     const Tensor& input, const c10::optional<Tensor>& weight_opt, const c10::optional<Tensor>& bias_opt,
-    Tensor& running_mean, Tensor& running_var, double momentum, double eps) {
+    const c10::optional<Tensor>& running_mean, const c10::optional<Tensor>& running_var, double momentum, double eps) {
   Tensor output, save_mean, save_var;
   std::tie(output, save_mean, save_var) =
     batch_norm_cpu(input, weight_opt, bias_opt, running_mean, running_var, /*update*/true, momentum, eps);
@@ -859,7 +859,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> _batch_norm_with_update_cpu(
 
 std::tuple<Tensor&, Tensor&, Tensor&, Tensor&> _batch_norm_with_update_cpu_out(
     const Tensor& input, const c10::optional<Tensor>& weight_opt, const c10::optional<Tensor>& bias_opt,
-    Tensor& running_mean, Tensor& running_var, double momentum, double eps,
+    const c10::optional<Tensor>& running_mean, const c10::optional<Tensor>& running_var, double momentum, double eps,
     Tensor& out, Tensor& save_mean, Tensor& save_var, Tensor& reserve) {
   std::tie(out, save_mean, save_var) =
     batch_norm_cpu_out(input, weight_opt, bias_opt, running_mean, running_var, /*update*/true, momentum, eps, out, save_mean, save_var);

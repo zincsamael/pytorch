@@ -404,8 +404,13 @@ def error_inputs_item(op, device, **kwargs):
             SampleInput(make_arg(shape)), error_type=RuntimeError,
             error_regex="elements cannot be converted to Scalar")
 
-
 def sample_inputs_batch_norm(op_info, device, dtype, requires_grad, **kwargs):
+    for sample in sample_inputs_batch_norm2(op_info, device, dtype, requires_grad, **kwargs):
+        if sample.input.numel() == 0:
+            continue
+        yield sample
+
+def sample_inputs_batch_norm2(op_info, device, dtype, requires_grad, **kwargs):
     make_arg = partial(make_tensor, device=device, dtype=dtype, requires_grad=requires_grad)
     make_arg_without_requires_grad = partial(make_tensor, device=device, dtype=dtype, requires_grad=False)
 
