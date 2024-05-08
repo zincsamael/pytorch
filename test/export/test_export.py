@@ -3249,6 +3249,82 @@ def forward(self, x):
         with self.assertRaisesRegex(RuntimeError, "shape\[0\] to be >= 3, but got 2"):
             ep.module()(*test_inp)
 
+    def test_nested_module(self):
+        class M1(torch.nn.Module):
+            def forward(self, x):
+                return x + x
+
+        class M2(torch.nn.Module):
+            def forward(self, x):
+                m = M1()
+                return m(x) * x
+
+        inps = (torch.randn(3, 3),)
+        ep = export(M2(), inps)
+        self.assertTrue(torch.allclose(ep.module()(*inps), M2()(*inps)))
+
+        add_nodes = [
+            node
+            for node in ep.graph.nodes
+            if node.op == "call_function" and node.target == torch.ops.aten.add.Tensor
+        ]
+        self.assertEqual(len(add_nodes), 1)
+        add_node = add_nodes[0]
+        self.assertEqual(len(add_node.meta["nn_module_stack"]), 1)
+        self.assertTrue("M2" in list(add_node.meta["nn_module_stack"].values())[0][1])
+
+        unflattened = unflatten(ep)
+        self.assertTrue(torch.allclose(unflattened(*inps), M2()(*inps)))
+
+    def test_nested_module_with_init_buffer(self):
+        class M1(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.b = torch.ones(3, 3)
+
+            def forward(self, x):
+                return x + self.b
+
+        class M2(torch.nn.Module):
+            def forward(self, x):
+                m = M1()
+                return m(x) * x
+
+        inps = (torch.randn(3, 3),)
+        ep = export(M2(), inps)
+        self.assertTrue(torch.allclose(ep.module()(*inps), M2()(*inps)))
+
+        self.assertEqual(len(ep.state_dict), 0)
+        self.assertEqual(len(ep.constants), 0)
+
+        unflattened = unflatten(ep)
+        self.assertTrue(torch.allclose(unflattened(*inps), M2()(*inps)))
+
+    @testing.expectedFailureRetraceability  # Retracing tensor constants results in buffers
+    def test_nested_module_with_constant_buffer(self):
+        class M1(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.b = torch.tensor(5)
+
+            def forward(self, x):
+                return x + self.b
+
+        class M2(torch.nn.Module):
+            def forward(self, x):
+                m = M1()
+                return m(x) * x
+
+        inps = (torch.randn(3, 3),)
+        ep = export(M2(), inps)
+        self.assertTrue(torch.allclose(ep.module()(*inps), M2()(*inps)))
+
+        self.assertEqual(len(ep.state_dict), 0)
+        self.assertEqual(len(ep.constants), 1)
+
+        unflattened = unflatten(ep)
+        self.assertTrue(torch.allclose(unflattened(*inps), M2()(*inps)))
+
     def test_lazy_module_kwargs(self):
         class LazyModule(torch.nn.modules.lazy.LazyModuleMixin, torch.nn.Module):
             def initialize_parameters(self, *args, **kwargs):
