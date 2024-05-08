@@ -307,6 +307,12 @@ else
     if [ -f build/.ninja_log ]; then
       cp build/.ninja_log dist
     fi
+    if [ -f build/aotriton/build/triton_build/.ninja_log ]; then
+      cp build/aotriton/build/triton_build/.ninja_log dist/.aotriton-triton.ninja_log
+    fi
+    if [ -f build/aotriton/build/.ninja_log ]; then
+      cp build/aotriton/build/.ninja_log dist/.aotriton.ninja_log
+    fi
 
     if [[ "$BUILD_ENVIRONMENT" == *rocm* ]]; then
       # remove sccache wrappers post-build; runtime compilation of MIOpen kernels does not yet fully support them
