@@ -71,6 +71,8 @@ from tools.testing.test_selections import (
     THRESHOLD,
 )
 
+from tools.testing.upload_artifacts import zip_and_upload_artifacts
+
 HAVE_TEST_SELECTION_TOOLS = True
 # Make sure to remove REPO_ROOT after import is done
 sys.path.remove(str(REPO_ROOT))
@@ -1260,6 +1262,12 @@ def parse_args():
         help="Run tests with TorchInductor turned on",
     )
 
+    parser.add_argument(
+        "--upload-artifacts-while-running",
+        action="store_true",
+        help="Upload artifacts while running CI, only works in IS_CI env var is set",
+    )
+
     return parser.parse_args()
 
 
@@ -1574,6 +1582,8 @@ def run_tests(
             shutil.copy(os.path.join(test_directory, conftest_file), cpp_file)
 
     def handle_error_messages(failure: Optional[TestFailure]):
+        if IS_CI and options.upload_artifacts_while_running:
+            zip_and_upload_artifacts()
         if failure is None:
             return False
         failures.append(failure)
