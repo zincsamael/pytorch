@@ -29,7 +29,7 @@ def upload_to_s3_artifacts(file_name: str) -> None:
         raise ValueError("GITHUB_RUN_ID is not set")
     import boto3  # type: ignore[import]
 
-    S3_RESOURCE = boto3.resource("s3")
+    S3_RESOURCE = boto3.client("s3")
     S3_RESOURCE.upload_file(
         file_name, "gha-artifacts", f"cattest_deleteme/pytorch/pytorch/{workflow_id}"
     )
