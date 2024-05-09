@@ -8,9 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 def zip_artifacts() -> str:
     """Zip up the artifacts."""
-    file_suffix = os.environ.get("FILE_SUFFIX")
+    file_suffix = os.environ.get("ARTIFACTS_FILE_SUFFIX")
     if not file_suffix:
-        raise ValueError("FILE_SUFFIX is not set")
+        raise ValueError("ARTIFACTS_FILE_SUFFIX is not set")
     file_name = f"{REPO_ROOT}/test-reports-{file_suffix}.zip"
 
     with zipfile.ZipFile(file_name, "w") as f:
