@@ -1079,6 +1079,7 @@ def _export(
             produce_guards_and_solve_constraints(
                 fake_mode,
                 ep_non_strict.gm,
+                dynamic_shapes,
                 equalities_inputs,
                 original_signature,
                 _disable_forced_specializations=_disable_forced_specializations,
