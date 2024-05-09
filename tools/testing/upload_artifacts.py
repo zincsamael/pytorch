@@ -31,7 +31,9 @@ def upload_to_s3_artifacts(file_name: str) -> None:
 
     S3_RESOURCE = boto3.client("s3")
     S3_RESOURCE.upload_file(
-        file_name, "gha-artifacts", f"cattest_deleteme/pytorch/pytorch/{workflow_id}/{Path(file_name).stem}"
+        file_name,
+        "gha-artifacts",
+        f"cattest_deleteme/pytorch/pytorch/{workflow_id}/{Path(file_name).stem}",
     )
 
 
