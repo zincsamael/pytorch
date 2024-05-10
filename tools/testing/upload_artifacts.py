@@ -3,6 +3,8 @@ import os
 import zipfile
 from pathlib import Path
 
+import requests
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
@@ -40,3 +42,20 @@ def upload_to_s3_artifacts(file_name: str) -> None:
 def zip_and_upload_artifacts() -> None:
     file_name = zip_artifacts()
     upload_to_s3_artifacts(file_name)
+
+
+def trigger_upload_test_stats_intermediate_workflow() -> None:
+    requests.post(
+        "https://api.github.com/repos/pytorch/pytorch/actions/workflows/upload_test_stats_intermediate.yml/dispatches",
+        headers={
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN')}",
+        },
+        json={
+            "ref": "csl/upload_artifacts_during_run",
+            "inputs": {
+                "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+                "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+            },
+        },
+    )
