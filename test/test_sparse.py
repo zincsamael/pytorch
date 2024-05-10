@@ -207,8 +207,9 @@ class TestSparse(TestSparseBase):
         """
         assert not x.is_coalesced()
         existing_indices = set()
+        indices = x._indices()
         for i in range(x._nnz()):
-            index = str(x._indices()[:, i])
+            index = str(indices[:, i])
             if index in existing_indices:
                 return True
             else:
@@ -1553,7 +1554,6 @@ class TestSparse(TestSparseBase):
     @coalescedonoff
     @precisionOverride({torch.bfloat16: 5e-2, torch.float16: 5e-2})
     @dtypes(torch.double, torch.cdouble, torch.bfloat16, torch.float16)
-    @skipIfTorchDynamo("nnz=0 issue")
     def test_sparse_addmm(self, device, dtype, coalesced):
         if (dtype is torch.bfloat16 or dtype is torch.float16) and device.startswith("cuda"):
             self.skipTest('addmm_sparse_cuda is not implemented for BFloat16 and Half')
@@ -3936,6 +3936,7 @@ class TestSparse(TestSparseBase):
                     res_view = result.diagonal(off)
                     data = diags[i]
                     if off > 0:
+                        print('BIK', data)
                         data = data[off:]
 
                     m = min(res_view.shape[0], data.shape[0])
@@ -4319,7 +4320,6 @@ class TestSparseMeta(TestCase):
 
     @all_sparse_layouts('layout', include_strided=False)
     @parametrize("dtype", [torch.float64])
-    @skipIfTorchDynamo("nnz=0 issue")
     def test_meta(self, dtype, layout):
         if layout is torch.sparse_coo:
             self._test_meta_sparse_coo(dtype)

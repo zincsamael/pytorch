@@ -92,7 +92,7 @@ class TestSparseProp(TestCase):
         self.assertIsInstance(x, FakeTensor)
         self.assertIsInstance(y, torch.Tensor)
 
-        # Convert sparse input to meta for comparison.
+        # Convert expected value to meta for comparison.
         y = y.to("meta")
         self.assertEqual(x, y, exact_layout=True, exact_is_coalesced=True)
 
@@ -101,7 +101,9 @@ class TestSparseProp(TestCase):
         # comparing their values. In the case of sparse tensors, this means
         # that comparing indices and values attributes are skipped as well,
         # which is why we are doing that explicitly below.
-        if x.layout is torch.sparse_coo:
+        if x.layout is torch.strided:
+            pass
+        elif x.layout is torch.sparse_coo:
             self.assertEqual(x._indices(), y._indices(), exact_layout=True)
             self.assertEqual(x._values(), y._values(), exact_layout=True)
         else:
@@ -112,7 +114,7 @@ class TestSparseProp(TestCase):
                 x_meta1, y_meta1 = (x.ccol_indices(), y.ccol_indices())
                 x_meta2, y_meta2 = (x.row_indices(), y.row_indices())
             else:
-                self.assertFail()
+                assert 0  # unreachable
             self.assertEqual(x_meta1, y_meta1, exact_layout=True)
             self.assertEqual(x_meta2, y_meta2, exact_layout=True)
             self.assertEqual(x.values(), y.values(), exact_layout=True)
@@ -161,6 +163,7 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
+            result = net(sparse_input)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/sum/output.
@@ -170,8 +173,7 @@ class TestSparseProp(TestCase):
                     self.assertEqualMeta(meta, sparse_input)
                 elif i == 1:
                     self.assertIsInstance(meta, FakeTensor)
-                    self.assertEqual(meta.layout, torch.strided)
-                    self.assertEqual(meta.dtype, dtype)
+                    self.assertEqualMeta(meta, result)
                 else:
                     self.assertEqual(meta, None)
 
@@ -192,13 +194,14 @@ class TestSparseProp(TestCase):
             dtype=dtype,
             index_dtype=itype,
         ):
+            result = net(sparse_input)
             # Build the traced graph.
             prog = torch.export.export(net, (sparse_input,))
             # Test arg/neg/abs/mul/relu/output.
             for i, node in enumerate(prog.graph.nodes):
                 meta = node.meta.get("val", None)
                 if i <= 4:
-                    self.assertEqualMeta(meta, sparse_input)
+                    self.assertEqualMeta(meta, result)
                 else:
                     self.assertEqual(meta, None)
 
@@ -208,6 +211,7 @@ class TestSparseProp(TestCase):
     def test_activation_coo(self):
         net = SparseActivationCOO()
         x = [torch.randn(3, 3) for _ in range(3)]
+        result = net(x)
         # Build the traced graph.
         prog = torch.export.export(net, args=(x,))
         # Test args/to_sparse/output.
@@ -215,10 +219,9 @@ class TestSparseProp(TestCase):
             meta = node.meta.get("val", None)
             if i <= 2:
                 self.assertIsInstance(meta, FakeTensor)
-                self.assertEqual(meta.layout, torch.strided)
-                self.assertEqual(meta.dtype, x[i].dtype)
+                self.assertEqualMeta(meta, x[i])
             elif i <= 5:
-                self.assertEqualMeta(meta, x[i - 3].to_sparse())
+                self.assertEqualMeta(meta, result[i - 3])
             else:
                 self.assertEqual(meta, None)
 

@@ -3627,7 +3627,7 @@ class ShapeEnv:
 
             for src, curr_t, constraint in sources_tensors_constraints:
                 if is_sparse_any(curr_t):
-                    for i, ss in enumerate(curr_t.size()):
+                    for i, ss in enumerate(curr_t.size()[:curr_t.sparse_dim()]):
                         property_source = TensorPropertySource(src, TensorProperty.SIZE, i)
                         track_symint(property_source, ss, constraint[i])
                 else:
