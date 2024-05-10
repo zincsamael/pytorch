@@ -240,6 +240,7 @@ struct InputBuffers : public std::unordered_map<Node*, InputBuffer> {
 
 static PyObject* the_autograd_compiler = nullptr;
 static PyObject* set_autograd_compiler(PyObject* dummy, PyObject* args);
+static bool in_active_ctx = false;
 
 static PyObject* clear_cache(PyObject* dummy, PyObject* args) {
   HANDLE_TH_ERRORS;
@@ -257,21 +258,11 @@ static PyObject* is_cache_empty(PyObject* dummy, PyObject* args) {
   END_HANDLE_TH_ERRORS;
 }
 
-static PyObject* set_verbose_logging(PyObject* dummy, PyObject* args) {
-  HANDLE_TH_ERRORS;
-  if (!PyArg_ParseTuple(args, "p", &is_verbose_logging_enabled)) {
-    Py_RETURN_FALSE;
-  }
-  Py_RETURN_TRUE;
-  END_HANDLE_TH_ERRORS;
-}
-
 // NOLINTNEXTLINE(*array*)
 static PyMethodDef _methods[] = {
     {"set_autograd_compiler", set_autograd_compiler, METH_VARARGS, nullptr},
     {"clear_cache", clear_cache, METH_NOARGS, nullptr},
     {"is_cache_empty", is_cache_empty, METH_NOARGS, nullptr},
-    {"set_verbose_logging", set_verbose_logging, METH_VARARGS, nullptr},
     {nullptr, nullptr, 0, nullptr}};
 
 static struct PyModuleDef _module = {
@@ -310,7 +301,8 @@ static TraceState call_begin_capture(
 static PyObject* call_end_capture(PyObject* self, const variable_list& inputs) {
   static PyObject* method_name = PyUnicode_InternFromString("end_capture");
   THPObjectPtr pyinput(THPVariable_WrapList(inputs));
-  return check(PyObject_CallMethodOneArg(self, method_name, pyinput.get()));
+  return check(
+      PyObject_CallMethodObjArgs(self, method_name, pyinput.get(), nullptr));
 }
 
 struct ClosingTHPObjectPtr : public THPObjectPtr {
@@ -558,28 +550,42 @@ variable_list compiled_autograd(
   return outputs;
 }
 
+bool active_ctx() {
+  return in_active_ctx;
+};
+
 static PyObject* set_autograd_compiler(PyObject* dummy, PyObject* args) {
   HANDLE_TH_ERRORS;
   PyObject* obj = nullptr;
-  if (!PyArg_ParseTuple(args, "O", &obj)) {
+  PyObject* py_verbose = nullptr;
+  PyObject* py_active_ctx = nullptr;
+  if (!PyArg_ParseTuple(args, "OOO", &obj, &py_verbose, &py_active_ctx)) {
     return nullptr;
   }
 
-  PyObject* prior = the_autograd_compiler;
+  PyObject* prior_obj = the_autograd_compiler;
+  bool prior_verbose = is_verbose_logging_enabled;
+  bool prior_active_ctx = in_active_ctx;
+
   if (obj == Py_None) { // disable
-    the_autograd_compiler = nullptr; // decref not needed due to `prior`
-    Engine::set_compiled_autograd(nullptr);
+    the_autograd_compiler = nullptr; // decref not needed due to `prior_fn`
+    Engine::set_compiled_autograd(nullptr, nullptr);
   } else { // enable
     Py_INCREF(obj);
     the_autograd_compiler = obj;
-    Engine::set_compiled_autograd(&compiled_autograd);
+    Engine::set_compiled_autograd(&compiled_autograd, &active_ctx);
   }
+  is_verbose_logging_enabled = PyObject_IsTrue(py_verbose);
+  in_active_ctx = PyObject_IsTrue(py_active_ctx);
 
-  if (prior == nullptr) {
-    Py_RETURN_NONE;
-  } else {
-    return prior;
+  if (prior_obj == nullptr) {
+    prior_obj = Py_None;
   }
+  PyObject* py_prior_verbose = PyBool_FromLong(prior_verbose);
+  PyObject* py_prior_active_ctx = PyBool_FromLong(prior_active_ctx);
+  PyObject* priors = PyTuple_Pack(
+      3, prior_obj, py_prior_verbose, py_prior_active_ctx, nullptr);
+  return priors;
   END_HANDLE_TH_ERRORS;
 }
 

@@ -1,4 +1,5 @@
 import contextlib
+
 from typing import Any, Callable, List, Optional, TYPE_CHECKING
 
 import torch
@@ -55,6 +56,7 @@ class AutogradCompilerInstance:
         self.fx_tracer = PythonKeyTracer()
         self.proxy_mode = ProxyTorchDispatchMode(self.fx_tracer, "symbolic")
         self.hooks_proxy: Optional[Proxy] = None
+        self.compiler_fn: Optional[Callable[[Any], Any]] = None
 
     def wrap_fake(self, x, source):
         assert isinstance(x, torch.Tensor)
@@ -197,6 +199,17 @@ class AutogradCompilerInstance:
             self.bind_tensors_to_proxies(input, proxies)
         return input
 
+    def accumulate_compiler_fns(self, backward_c_function):
+        compiler_fn = backward_c_function._compiled_autograd_compiler_fn
+        if self.compiler_fn is None:
+            self.compiler_fn = compiler_fn
+        elif self.compiler_fn is not compiler_fn:
+            raise RuntimeError(
+                "Multiple compile backends detected, the gradients are depending on outputs from 2+ torch.compile "
+                "configurations, this is unsupported. If you are using the same configuration between the "
+                "torch.compile calls, file an issue."
+            )
+
     def end_capture(self, outputs):
         self.stack.close()
         self.fx_tracer.create_node(
@@ -220,9 +233,13 @@ class AutogradCompilerInstance:
             "compiled_autograd_graph",
             payload_fn=lambda: graph.print_readable(print_output=False),
         )
+
         global override_compiler_fn
-        assert override_compiler_fn
-        return override_compiler_fn(graph)
+        if override_compiler_fn:
+            return override_compiler_fn(graph)
+
+        assert self.compiler_fn and hasattr(self.compiler_fn, "rewrap")
+        return self.compiler_fn.rewrap(graph)
 
     def reorder_accumulate_grad_nodes(self):
         """
@@ -269,35 +286,59 @@ class AutogradCompilerInstance:
         set_stack_trace(new_stack_trace)
 
 
-compiled_autograd_enabled = False
 override_compiler_fn: Optional[Callable[[Any], Any]] = None
 
 
+# Do not call this function directly, use `torch.compile` with a backend that invokes AOTAutograd, e.g. aot_eager, inductor
+def _initialize():
+    assert torch._dynamo.config.compiled_autograd_enabled
+    global override_compiler_fn
+    assert (
+        not override_compiler_fn
+    ), "Cannot torch.compile with compiled autograd within a compiled autograd context manager"
+
+    torch._C._dynamo.compiled_autograd.set_autograd_compiler(
+        AutogradCompilerInstance,
+        snapshot_verbose_logging_enabled(),
+        False,
+    )
+    # TODO: multithreading can only be re-enabled when compiled autograd is turned off and all nodes are freed
+    torch.autograd.set_multithreading_enabled(False)
+    compiled_autograd_log.info("Compiled autograd initialized.")
+
+
+# Forces .backward() call within to dispatch to compiled autograd
+# Allows for more fine-grained control over which autograd engine calls should be handled
 @contextlib.contextmanager
 def enable(compiler_fn):
-    global compiled_autograd_enabled, override_compiler_fn
-    assert not compiled_autograd_enabled
-    compiled_autograd_enabled = True
+    global override_compiler_fn
+    assert (
+        override_compiler_fn is None
+    ), "Nesting compiled autograd context managers is not supported"
     override_compiler_fn = compiler_fn
-    prior = torch._C._dynamo.compiled_autograd.set_autograd_compiler(
-        AutogradCompilerInstance
+    priors = torch._C._dynamo.compiled_autograd.set_autograd_compiler(
+        AutogradCompilerInstance,
+        snapshot_verbose_logging_enabled(),
+        True,
     )
-    assert not prior
-    torch._C._dynamo.compiled_autograd.set_verbose_logging(
-        snapshot_verbose_logging_enabled()
-    )
+    assert not priors[2]
     try:
         with torch.autograd.set_multithreading_enabled(False):
             yield
     finally:
-        compiled_autograd_enabled = False
-        torch._C._dynamo.compiled_autograd.set_autograd_compiler(None)
+        torch._C._dynamo.compiled_autograd.set_autograd_compiler(*priors)
+        override_compiler_fn = None
 
 
+# Prevents .backward() call within from being dispatched to compiled autograd
+# This does not disable marking torch.compile created autograd nodes during forward compilation
+# controlled by `torch._dynamo.config.compiled_autograd_enabled`
 @contextlib.contextmanager
 def disable_compiler():
-    prior = torch._C._dynamo.compiled_autograd.set_autograd_compiler(None)
+    priors = torch._C._dynamo.compiled_autograd.set_autograd_compiler(
+        None, False, False
+    )
     try:
         yield
     finally:
-        torch._C._dynamo.compiled_autograd.set_autograd_compiler(prior)
+        torch._C._dynamo.compiled_autograd.set_autograd_compiler(*priors)
