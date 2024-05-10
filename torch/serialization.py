@@ -299,7 +299,7 @@ def _validate_device(location, backend_name):
 
     Args:
         location: string of device
-        backend_name: the name of privateuse1, which can be renamed
+        backend_name: the backend name or the name of privateuse1, which can be renamed
 
     Returns:
         device_index: int
@@ -312,6 +312,7 @@ def _validate_device(location, backend_name):
     device_module = getattr(torch, backend_name)
     if hasattr(device_module, '_utils') and hasattr(device_module._utils, '_get_device_index'):
         device_index = device_module._utils._get_device_index(location, True)
+        device = torch.device(backend_name, device_index)
     else:
         device = torch.device(location)
         device_index = device.index if device.index else 0
@@ -328,29 +329,23 @@ def _validate_device(location, backend_name):
                                f'{device_index} but torch.{backend_name}.device_count() is {device_count}. '
                                'Please use torch.load with map_location to map your storages '
                                'to an existing device.')
-    return device_index
+    return device
 
 
 def validate_cuda_device(location):
-    return _validate_device(location, 'cuda')
+    return _validate_device(location, 'cuda').index
 
 
 def validate_hpu_device(location):
-    return _validate_device(location, 'hpu')
+    return _validate_device(location, 'hpu').index
 
 
 def _deserialize(backend_name, obj, location):
     if backend_name == 'privateuse1':
         backend_name = torch._C._get_privateuse1_backend_name()
     if location.startswith(backend_name):
-        if not hasattr(obj, backend_name):
-            raise RuntimeError(f'Attempting to load the storages to the {backend_name.upper()} device '
-                               f'but torch.storage._StorageBase.{backend_name}() or '
-                               f'torch.storage.TypedStorage.{backend_name}() is not generated. '
-                               'Please use torch.utils.generate_methods_for_privateuse1_backend '
-                               f'to generate storage.{backend_name}() method first.')
-        device_index = _validate_device(location, backend_name)
-        return getattr(obj, backend_name)(device_index)
+        device = _validate_device(location, backend_name)
+        return obj.to(device)
 
 
 register_package(10, _cpu_tag, _cpu_deserialize)
