@@ -19,6 +19,7 @@ import torch
 
 from .coordinate_descent_tuner import CoordescTuner
 
+from ..utils import config
 from .hints import (
     _NUM_THREADS_PER_WARP,
     AutotuneHint,
@@ -389,6 +390,11 @@ class CachingAutotuner(KernelInterface):
                 "num_warps": compile_meta["num_warps"],
                 "num_stages": compile_meta["num_stages"],
                 "debug": compile_meta["debug"],
+                "enable_fp_fusion": (
+                    config.triton.enable_fp_fusion
+                    or self.heuristic_type
+                    in (HeuristicType.TEMPLATE, HeuristicType.USER_AUTOTUNE)
+                ),
             }
             if self.device_props.type != "hip":
                 if "waves_per_eu" in compile_meta:
