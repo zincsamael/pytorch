@@ -3936,7 +3936,6 @@ class TestSparse(TestSparseBase):
                     res_view = result.diagonal(off)
                     data = diags[i]
                     if off > 0:
-                        print('BIK', data)
                         data = data[off:]
 
                     m = min(res_view.shape[0], data.shape[0])
