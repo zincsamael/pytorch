@@ -3618,23 +3618,28 @@ class CppScheduling(BaseScheduling):
             cpp_kernel_proxy_list: List[CppKernelProxy] = []
             nodes_list: List[List[SchedulerNode]] = []
 
-            for _node in node.get_outer_nodes():
-                assert isinstance(_node, (FusedSchedulerNode, SchedulerNode))
-                _nodes: List[SchedulerNode] = _node.get_nodes()  # type: ignore[assignment]
-                cpp_kernel_proxy = CppKernelProxy(kernel_group)
-                cpp_kernel_proxy.codegen_nodes(_nodes)
+            generated_cpp_vec_kernel_count = metrics.generated_cpp_vec_kernel_count
 
-                cpp_kernel_proxy_list.append(cpp_kernel_proxy)
-                nodes_list.append(_nodes)
+            def try_outer_loop_fusion(node: OuterLoopFusedSchedulerNode):
+                assert isinstance(node, OuterLoopFusedSchedulerNode)
+                for _node in node.get_outer_nodes():
+                    assert isinstance(_node, (FusedSchedulerNode, SchedulerNode))
+                    _nodes: List[SchedulerNode] = _node.get_nodes()  # type: ignore[assignment]
+                    cpp_kernel_proxy = CppKernelProxy(kernel_group)
+                    cpp_kernel_proxy.codegen_nodes(_nodes)
 
-            # Note that, in the future, when every kernel can be vectorized,
-            # the function select_tiling will be much easier, and we'll be able to lift
-            # check_outer_fusion_loop_level_attr to the fusion phase,
-            # avoiding grouping kernels at fusion time that "look like we'll be able to fuse them"
-            # but then we actually won't.
-            if node.check_outer_fusion_loop_level_attr(
-                cpp_kernel_proxy_list, node.outer_loop_fusion_depth
-            ):
+                    cpp_kernel_proxy_list.append(cpp_kernel_proxy)
+                    nodes_list.append(_nodes)
+
+                # Note that, in the future, when every kernel can be vectorized,
+                # the function select_tiling will be much easier, and we'll be able to lift
+                # check_outer_fusion_loop_level_attr to the fusion phase,
+                # avoiding grouping kernels at fusion time that "look like we'll be able to fuse them"
+                # but then we actually won't.
+                if not node.check_outer_fusion_loop_level_attr(
+                    cpp_kernel_proxy_list, node.outer_loop_fusion_depth
+                ):
+                    return False
                 # Merge the cpp_kernel_proxy_list into cpp_kernel_proxy
                 outer_fusion_cpp_kernel_proxy = node.merge_outer_fusion_kernels(
                     cpp_kernel_proxy_list,
@@ -3643,10 +3648,21 @@ class CppScheduling(BaseScheduling):
                     outer_fusion_cpp_kernel_proxy,
                     [_node for _nodes in nodes_list for _node in _nodes],
                 )
-            else:
-                # Fall back to standard loop codegen
-                for _kernel_proxy, _nodes in zip(cpp_kernel_proxy_list, nodes_list):
-                    kernel_group.finalize_kernel(_kernel_proxy, _nodes)
+                return True
+
+            if not try_outer_loop_fusion(node):
+                # Reset generated_cpp_vec_kernel_count to codegen again
+                metrics.generated_cpp_vec_kernel_count = generated_cpp_vec_kernel_count
+                # Similar as comment in
+                # https://github.com/pytorch/pytorch/blob/469383755fe416eb1c41fa724762ad3eaecdff07/torch/_inductor/codegen/cpp.py#L3269-L3272
+                # Kernels share the same global contexts like V.graph.wrapper_code, V.kernel.args.
+                with torch._inductor.config.patch(inplace_buffers=False):
+                    for _node in node.get_outer_nodes():
+                        assert isinstance(_node, (FusedSchedulerNode, SchedulerNode))
+                        _nodes: List[SchedulerNode] = _node.get_nodes()  # type: ignore[assignment]
+                        cpp_kernel_proxy = CppKernelProxy(kernel_group)
+                        cpp_kernel_proxy.codegen_nodes(_nodes)
+                        kernel_group.finalize_kernel(cpp_kernel_proxy, _nodes)
         else:
             nodes: List[SchedulerNode] = node.get_nodes()  # type: ignore[assignment]
             cpp_kernel_proxy = CppKernelProxy(kernel_group)
