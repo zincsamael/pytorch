@@ -10,7 +10,7 @@ install_binary() {
 
 mkdir -p /tmp/cache/bin
 mkdir -p /tmp/cache/lib
-sed -e 's|PATH="\(.*\)"|PATH="/tmp/cache/bin:\1"|g' -i /etc/environment
+# sed -e 's|PATH="\(.*\)"|PATH="/tmp/cache/bin:\1"|g' -i /etc/environment
 export PATH="/tmp/cache/bin:$PATH"
 
 install_binary
