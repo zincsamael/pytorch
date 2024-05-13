@@ -290,8 +290,7 @@ else
       WERROR=1 python setup.py bdist_wheel
     else
       if [[ "$BUILD_ENVIRONMENT" == *xla* ]]; then
-        chmod +x .ci/docker/common/install_cache.sh
-        .ci/docker/common/install_cache.sh
+        .ci/pytorch/install_cache_xla.sh
       fi
       python setup.py bdist_wheel
     fi
