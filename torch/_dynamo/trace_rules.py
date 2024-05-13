@@ -3089,6 +3089,18 @@ def is_numpy(obj) -> bool:
     return isinstance(obj, (np.ndarray, np.generic)) or id(obj) in _numpy_function_ids
 
 
+def is_numpy_dtype(obj) -> bool:
+    if np is None:
+        return False
+    return isinstance(obj, np.dtype)
+
+
+def is_numpy_type_info(obj) -> bool:
+    if np is None:
+        return False
+    return isinstance(obj, (np.finfo, np.iinfo))
+
+
 BUILTIN_SKIPLIST = (
     abc,
     collections,
