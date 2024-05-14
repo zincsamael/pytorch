@@ -1812,7 +1812,7 @@ def are_strides_like_channels_last(
     shape: Sequence[int], strides: Sequence[int]
 ) -> bool:
     ndim = len(shape)
-
+    print("DEBUG, are_strides_like_channels_last, ndim", ndim)
     if ndim == 4:
         # Check for channels_last_2d
         dim_order = [1, 3, 2, 0]
@@ -1822,6 +1822,8 @@ def are_strides_like_channels_last(
     else:
         return False
 
+    print("DEBUG, are_strides_like_channels_last, strides", strides)
+    print("DEBUG, are_strides_like_channels_last, shape", shape)
     if strides[1] == 0:
         return False
 
@@ -1838,9 +1840,21 @@ def are_strides_like_channels_last(
             min *= shape[d]
     return True
 
+debug 2d print channels last torch.channels_last torch.channels_last_3d
+DEBUG, are_strides_like_channels_last, ndim 4
+DEBUG, are_strides_like_channels_last, strides (48, 1, 12, 3)
+DEBUG, are_strides_like_channels_last, shape torch.Size([2, 3, 4, 4])
+
+
+DEBUG, are_strides_like_channels_last, ndim 5
+DEBUG, are_strides_like_channels_last, strides (192, 64, 16, 4, 1)
+DEBUG, are_strides_like_channels_last, shape torch.Size([2, 3, 4, 4, 4])
+
+64*3 = 192
 
 def suggest_memory_format(x: TensorLikeType) -> torch.memory_format:
     if x.layout != torch.strided:
+        print("DEBUG, suggest_memory_format layout not stried")
         return torch.contiguous_format
 
     if are_strides_like_channels_last(x.shape, x.stride()):
