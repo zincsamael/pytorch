@@ -568,6 +568,43 @@ class GuardBuilder(GuardBuilderBase):
                     key, get_verbose_code_parts(f"{key_source} == {key!r}", guard)
                 )
 
+    def getattr_manager_helper(
+        self,
+        source,
+        base_source_name,
+        base_example_value,
+        base_guard_manager,
+        example_value,
+        guard_manager_enum,
+    ):
+        source_name = source.name()
+        if isinstance(base_example_value, torch.nn.Module):
+            return self.getattr_on_nn_module(
+                source,
+                base_guard_manager,
+                base_example_value,
+                example_value,
+                base_source_name,
+                source_name,
+                guard_manager_enum,
+            )
+        elif (
+            type(base_example_value) in (types.FunctionType, types.MethodType)
+            and source.member == "__code__"
+        ):
+            return base_guard_manager.func_code_manager(
+                source=source_name,
+                example_value=base_example_value.__code__,
+                guard_manager_enum=GuardManagerType.GUARD_MANAGER,
+            )
+        else:
+            return base_guard_manager.getattr_manager(
+                attr=source.member,
+                source=source_name,
+                example_value=example_value,
+                guard_manager_enum=guard_manager_enum,
+            )
+
     def getattr_on_nn_module(
         self,
         source,
@@ -832,22 +869,13 @@ class GuardBuilder(GuardBuilderBase):
         elif istype(source, AttrSource):
             assert base_guard_manager  # to make mypy happy
 
-            if isinstance(base_example_value, torch.nn.Module):
-                return self.getattr_on_nn_module(
-                    source,
-                    base_guard_manager,
-                    base_example_value,
-                    example_value,
-                    base_source_name,
-                    source_name,
-                    guard_manager_enum,
-                )
-
-            return base_guard_manager.getattr_manager(
-                attr=source.member,
-                source=source_name,
-                example_value=example_value,
-                guard_manager_enum=guard_manager_enum,
+            return self.getattr_manager_helper(
+                source,
+                base_source_name,
+                base_example_value,
+                base_guard_manager,
+                example_value,
+                guard_manager_enum,
             )
         elif istype(source, GetItemSource):
             assert base_guard_manager  # to make mypy happy
@@ -1097,25 +1125,14 @@ class GuardBuilder(GuardBuilderBase):
                 base_example_value = self.get(base)
                 guard_manager_enum = self.get_guard_manager_type(source, example_value)
 
-                # if the base value is nn.Module, check if we can speedup the
-                # guard by going through __dict__ attrs.
-                if isinstance(base_example_value, torch.nn.Module):
-                    return self.getattr_on_nn_module(
-                        source,
-                        base_manager,
-                        base_example_value,
-                        example_value,
-                        base,
-                        source.name(),
-                        guard_manager_enum,
-                    )
-                else:
-                    base_manager.getattr_manager(
-                        attr=attr,
-                        source=guard.name,
-                        example_value=example_value,
-                        guard_manager_enum=guard_manager_enum,
-                    )
+                return self.getattr_manager_helper(
+                    source,
+                    base,
+                    base_example_value,
+                    base_manager,
+                    example_value,
+                    guard_manager_enum,
+                )
             else:
                 base_manager.add_no_hasattr_guard(
                     attr, get_verbose_code_parts(code, guard)
@@ -1435,13 +1452,15 @@ class GuardBuilder(GuardBuilderBase):
 
     def FUNCTION_MATCH(self, guard: Guard):
         """things like torch.add and user defined functions"""
-        return self.ID_MATCH(guard)
+        self.ID_MATCH(guard)
 
     def CLOSURE_MATCH(self, guard: Guard):
         """matches a closure by __code__ id."""
         val = self.get(guard.name)
         # Strictly only want user-defined functions
-        if type(val) == types.FunctionType and hasattr(val, "__code__"):
+        if type(val) in (types.FunctionType, types.MethodType) and hasattr(
+            val, "__code__"
+        ):
             self._guard_on_attribute(guard, "__code__", GuardBuilder.HASATTR)
             self._guard_on_attribute(guard, "__code__", GuardBuilder.FUNCTION_MATCH)
         else:
