@@ -3816,6 +3816,17 @@ class CppScheduling(BaseScheduling):
                 outer_fusion_cpp_kernel_proxy,
                 [_node for _nodes in nodes_list for _node in _nodes],
             )
+
+            # In this case, the local buffer is corresponding to an output buffer,
+            # which stores with temp values at first before loading to use later.
+            assert (
+                local_buffers[0].original_node_name in kernel_group.args.output_buffers
+            )
+            # Remove this arg from kernel group args, since using local buffer now
+            kernel_group.args.output_buffers[
+                local_buffers[0].original_node_name
+            ] = "REMOVED"
+
             return True
 
         if not try_outer_loop_fusion_with_local_buf(node):
