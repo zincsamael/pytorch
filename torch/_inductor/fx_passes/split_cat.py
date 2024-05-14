@@ -27,7 +27,16 @@ from ..pattern_matcher import (
     RepeatedExpr,
 )
 from .group_batch_fusion import is_node_meta_valid, POST_GRAD_FUSIONS, PRE_GRAD_FUSIONS
+from .pad_mm import (
+    check_device,
+    check_dtype,
+    get_alignment_size,
+    get_padded_length,
+    realize_tensor,
+    valid_shape_and_stride,
+)
 
+aten = torch.ops.aten
 log = logging.getLogger(__name__)
 
 _Arguments: TypeAlias = Tuple[torch.fx.node.Argument, ...]
@@ -56,6 +65,9 @@ pre_grad_pass_names = [
 
 post_grad_pass_names = [
     "decompose_mm_pass",
+    "decompose_largek_mm_pass",
+    "make_mmt_contiguous_pass",
+    "pad_mm_pass",
 ]
 
 for pass_name in pre_grad_pass_names:
@@ -87,6 +99,10 @@ def construct_pattern_matcher_pass(pass_name: str) -> PatternMatcherPass:
         return PRE_GRAD_PATTERNS[pass_name]
     else:
         return POST_GRAD_PATTERNS[pass_name]
+
+
+def is_aten_node_meta_valid(node: torch.fx.Node):
+    return "val" in node.meta
 
 
 def _get_split_args_default(split_node):
@@ -1610,3 +1626,159 @@ def merge_stack_tahn_unbind(match: Match, split_sections: List[int], dim: int):
                 split_sections = new_split_sections
 
                 counters["inductor"]["merge_stack_tahn_unbind_pass"] += 1
+
+
+def should_mutate_mm_common(mat1, mat2) -> bool:
+    if is_aten_node_meta_valid(mat1) and is_aten_node_meta_valid(mat2):
+        mat1 = mat1.meta["val"]
+        mat2 = mat2.meta["val"]
+    else:
+        return False
+    return (
+        check_device(mat1, mat2)
+        and len(mat1.shape) == 2
+        and len(mat2.shape) == 2
+    )
+
+
+def print_mm_pattern(match: Match, inputs: List[torch.fx.Node]):
+    node = match.nodes[-1]
+    log.debug(
+        "mm pattern node %s with input shape: %s",
+        node.target,
+        ", ".join(
+            str(input.meta["val"].shape) if "val" in input.meta else "None"
+            for input in inputs
+        ),
+    )
+
+
+def should_pad_mm(mat1, mat2):
+    if not should_mutate_mm_common(mat1, mat2):
+        return False
+    mat1 = mat1.meta["val"]
+    mat2 = mat2.meta["val"]
+    return (
+        check_dtype(mat1, mat2)
+        and all(valid_shape_and_stride(t) for t in (mat1, mat2))
+    )
+
+
+def should_pad_mm_bf16(dtype, M, N, K):
+    # we have experienced some large perf hits in this case, even in bandwidth bound regimes
+        if (
+            dtype is torch.bfloat16
+            and K > M
+            and K > N
+            and torch.cuda.get_device_capability() < (9, 0)
+        ):  # doesnt repro on h100s:
+            return True
+        return False
+
+
+@register_graph_pattern(
+    CallFunction(aten.mm, Arg(), Arg()),
+    pass_dict=construct_pattern_matcher_pass("pad_mm_pass"),
+)
+def pad_aten_mm(
+    match: Match,
+    mat1: torch.fx.Node,
+    mat2: torch.fx.Node,
+):
+    graph = match.graph
+    mm_node = match.nodes[-1]
+    if should_pad_mm(mat1, mat2):
+        fake_mat1, fake_mat2 = mat1.meta["val"], mat2.meta["val"]
+        m = fake_mat1.shape[0]
+        k = fake_mat1.shape[1]
+        n = fake_mat2.shape[1]
+        if should_pad_mm_bf16(fake_mat1.dtype, m, n, k):
+            real_mat1 = realize_tensor(fake_mat1)
+            real_mat2 = realize_tensor(fake_mat2)
+            k_padded_length = get_padded_length(real_mat1.shape[1], get_alignment_size(real_mat1))
+            m_padded_length = get_padded_length(real_mat1.shape[0], get_alignment_size(real_mat1))
+            n_padded_length = get_padded_length(real_mat2.shape[1], get_alignment_size(real_mat2))
+            if m_padded_length == 0 and n_padded_length == 0 and k_padded_length == 0:
+                return
+            counters["inductor"]["pad_mm_pass"] += 1
+            print_mm_pattern(match, [mat1, mat2])
+            if k_padded_length != 0:
+                with graph.inserting_after(mat1):
+                    meta1 = mat1.meta["val"]
+                    meta2 = mat2.meta["val"]
+                    mat1 = graph.call_function(
+                        aten.pad.default,
+                        args=(mat1, (0, k_padded_length, 0, 0), "constant", 0),
+                    )
+                    mat2 = graph.call_function(
+                        aten.pad.default,
+                        args=(mat2, (0, 0, 0, k_padded_length), "constant", 0),
+                    )
+                    mat1.meta["val"] = aten.pad.default(meta1, (0, k_padded_length, 0, 0), "constant", 0)
+                    mat2.meta["val"] = aten.pad.default(meta2, (0, 0, 0, k_padded_length), "constant", 0)
+                    padded_mm = graph.call_function(
+                        aten.mm.default,
+                        args=(mat1, mat2),
+                    )
+                    mm_node.replace_all_uses_with(padded_mm)
+                    padded_mm.meta.update(mm_node.meta)
+            if n_padded_length != 0:
+                meta1 = mat1.meta["val"]
+                meta2 = mat2.meta["val"]
+                with graph.inserting_after(mat2):
+                    mat2 = graph.call_function(
+                        aten.pad.default,
+                        args=(mat2, (0, n_padded_length, 0, 0), "constant", 0),
+                    )
+                    mat2.meta["val"] = aten.pad.default(meta2, (0, n_padded_length, 0, 0), "constant", 0)
+                    padded_mm = graph.call_function(
+                        aten.mm.default,
+                        args=(mat1, mat2),
+                    )
+                    padded_mm.meta["val"] = aten.mm.default(meta1, meta2)
+                    sliced_mm = graph.call_function(
+                        aten.slice.Tensor,
+                        args=(padded_mm, 1, 0, n, 1),
+                    )
+                    mm_node.replace_all_uses_with(sliced_mm)
+                    sliced_mm.meta.update(mm_node.meta)
+            if m_padded_length != 0:
+                meta1 = mat1.meta["val"]
+                meta2 = mat2.meta["val"]
+                with graph.inserting_after(mat1):
+                    mat1 = graph.call_function(
+                        aten.pad.default,
+                        args=(mat1, (0, 0, 0, m_padded_length), "constant", 0),
+                    )
+                    mat1.meta["val"] = aten.pad.default(meta1, (0, 0, 0, m_padded_length), "constant", 0)
+                    padded_mm = graph.call_function(
+                        aten.mm.default,
+                        args=(mat1, mat2),
+                    )
+                    padded_mm.meta["val"] = aten.mm.default(meta1, meta2)
+                    sliced_mm = graph.call_function(
+                        aten.slice.Tensor,
+                        args=(padded_mm, 0, 0, m, 1),
+                    )
+                    mm_node.replace_all_uses_with(sliced_mm)
+                    sliced_mm.meta.update(mm_node.meta)
+            graph.erase_node(mm_node)
+
+
+@register_graph_pattern(
+    CallFunction(aten.mm, CallFunction(aten.permute, Arg(), Ignored()), Arg()),
+    pass_dict=construct_pattern_matcher_pass("make_mmt_contiguous_pass"),
+)
+def make_mmt_contiguous(
+    match: Match,
+    mat1: torch.fx.Node,
+    mat2: torch.fx.Node,
+):
+    def repl(mat1, mat2):
+        return torch.mm(torch.transpose(mat1, 1, 0).contiguous(), mat2.contiguous())
+
+    if should_mutate_mm_common(mat1, mat2):
+        match.replace_by_example(repl, [mat1, mat2])
+        counters["inductor"]["make_mmt_contiguous_pass"] += 1
+        print_mm_pattern(match, [mat1, mat2])
+    return

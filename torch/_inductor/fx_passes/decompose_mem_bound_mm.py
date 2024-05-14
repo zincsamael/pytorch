@@ -8,7 +8,7 @@ from torch._dynamo.utils import counters
 from .. import config
 
 from ..pattern_matcher import Arg, CallFunction, Match, register_graph_pattern
-from .split_cat import construct_pattern_matcher_pass
+from .split_cat import construct_pattern_matcher_pass, print_mm_pattern
 
 aten = torch.ops.aten
 log = logging.getLogger(__name__)
@@ -79,18 +79,6 @@ def is_node_meta_valid(node: torch.fx.Node):
     return "val" in node.meta
 
 
-def print_decompose_pattern(match: Match, inputs: List[torch.fx.Node]):
-    node = match.nodes[-1]
-    log.debug(
-        "Decompose %s with input shape: %s",
-        node.target,
-        ", ".join(
-            str(input.meta["val"].shape) if "val" in input.meta else "None"
-            for input in inputs
-        ),
-    )
-
-
 @register_graph_pattern(
     CallFunction(aten.bmm, Arg(), Arg()),
     pass_dict=construct_pattern_matcher_pass("decompose_mm_pass"),
@@ -102,7 +90,7 @@ def decompose_bmm(match: Match, mat1: torch.fx.Node, mat2: torch.fx.Node):
     if should_decompose_bmm(mat1, mat2):
         counters["inductor"]["decompose_bmm"] += 1
         match.replace_by_example(repl, [mat1, mat2])
-        print_decompose_pattern(match, [mat1, mat2])
+        print_mm_pattern(match, [mat1, mat2])
         realize_inputs([mat1, mat2])
     return
 
@@ -123,7 +111,7 @@ def decompose_addmm(
     if should_decompose_mm(mat2, mat3):
         counters["inductor"]["decompose_addmm"] += 1
         match.replace_by_example(repl, [mat1, mat2, mat3])
-        print_decompose_pattern(match, [mat1, mat2, mat3])
+        print_mm_pattern(match, [mat1, mat2, mat3])
         realize_inputs([mat1, mat2, mat3])
     return
 
@@ -143,6 +131,42 @@ def decompose_mm(
     if should_decompose_mm(mat1, mat2):
         counters["inductor"]["decompose_mm"] += 1
         match.replace_by_example(repl, [mat1, mat2])
-        print_decompose_pattern(match, [mat1, mat2])
+        print_mm_pattern(match, [mat1, mat2])
         realize_inputs([mat1, mat2])
+    return
+
+
+def should_decompose_mm_largek(mat1, mat2) -> bool:
+    if is_node_meta_valid(mat1) and is_node_meta_valid(mat2):
+        mat1 = mat1.meta["val"]
+        mat2 = mat2.meta["val"]
+    else:
+        return False
+    return (
+        check_device(mat1, mat2)
+        and len(mat1.shape) == 2
+        and len(mat2.shape) == 2
+        and mat1.shape[1] >= min_first_dimension_decomposition
+        and mat1.shape[0] < max_other_dimention_decomposition
+        and mat2.shape[1] < max_other_dimention_decomposition
+    )
+
+
+@register_graph_pattern(
+    CallFunction(aten.mm, Arg(), Arg()),
+    pass_dict=construct_pattern_matcher_pass("decompose_largek_mm_pass"),
+)
+def decompose_mm_large_k(
+    match: Match,
+    mat1: torch.fx.Node,
+    mat2: torch.fx.Node,
+):
+    def repl(mat1, mat2):
+        mat1 = mat1.permute(1, 0)
+        return torch.sum(mat1[:, :, None] * mat2[:, None, :], dim=0)
+
+    if should_decompose_mm_largek(mat1, mat2):
+        counters["inductor"]["decompose_mm_large_k"] += 1
+        match.replace_by_example(repl, [mat1, mat2])
+        print_mm_pattern(match, [mat1, mat2])
     return
